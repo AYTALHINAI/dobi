@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "671147613824",
+    "firebase_url": "https://dobi-47908-default-rtdb.firebaseio.com",
+    "project_id": "dobi-47908",
+    "storage_bucket": "dobi-47908.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:671147613824:android:847ca84dc6e2b2cc315065",
+        "android_client_info": {
+          "package_name": "com.example.dobi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLBjQ5s9D85_P8vt7OpJTyTVMYKM01fIk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
