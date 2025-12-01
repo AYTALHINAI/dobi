@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
                     height: screenHeight * 0.25,
                     alignment: Alignment.center,
                     child: const Text(
-                      'Dobi Logo',
+                      'Dobbie Logo',
                       style: TextStyle(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
