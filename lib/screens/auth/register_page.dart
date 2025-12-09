@@ -95,7 +95,7 @@ class RegisterPage extends StatelessWidget {
                         title: "Register as Shop Owner",
                         subtitle: "Create an account to sell your products on the platform.",
                         onTap: () {
-                          // Navigator.pushNamed(context, AppRoutes.shopRegisterStep1);
+                          Navigator.pushNamed(context, AppRoutes.shopOwnerStep1);
                         },
                       ),
                     ],

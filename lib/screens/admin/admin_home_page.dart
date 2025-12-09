@@ -30,10 +30,10 @@ class AdminHomePage extends StatelessWidget {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
-            // Example buttons for admin actions
+
+            // Driver Applicants Button
             ElevatedButton.icon(
               onPressed: () {
-                // Navigate to driver applicants page
                 Navigator.pushNamed(context, AppRoutes.adminDriverApplicants);
               },
               icon: const Icon(Icons.drive_eta, color: Colors.black),
@@ -44,7 +44,7 @@ class AdminHomePage extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
                 backgroundColor: Colors.white10,
-                foregroundColor: Colors.black, // makes the text and icon black
+                foregroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -52,7 +52,29 @@ class AdminHomePage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            // You can add more admin actions here later
+
+            // Shop Owner Applicants Button
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.adminShopOwnerApplicants);
+              },
+              icon: const Icon(Icons.store, color: Colors.black),
+              label: const Text(
+                'View Shop Owner Applicants',
+                style: TextStyle(color: Colors.black),
+              ),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+                backgroundColor: Colors.white10,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+            // Add more admin actions here later
           ],
         ),
       ),

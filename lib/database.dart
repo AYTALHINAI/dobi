@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../screens/auth/user/user_registration_model.dart';
 import '../screens/auth/driver/driver_registration_model.dart';
+import '../screens/auth/shopOwner/shop_owner_registration_model.dart';
 
 class DatabaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -14,7 +15,10 @@ class DatabaseService {
     return data;
   }
 
-  /// Get all pending drivers
+  /// ------------------------------------------------
+  /// ADMIN- DRIVERS/SHOP_OWNERS OPERATIONS
+  /// ------------------------------------------------
+
   Future<QuerySnapshot> getPendingDrivers() async {
     return _firestore
         .collection('drivers')
@@ -22,7 +26,6 @@ class DatabaseService {
         .get();
   }
 
-  /// Update driver status (approved/rejected)
   Future<void> updateDriverStatus(String uid, String status) async {
     Map<String, dynamic> updateData = {
       'applicationStatus': status,
@@ -31,6 +34,24 @@ class DatabaseService {
     };
     await _firestore.collection('drivers').doc(uid).update(updateData);
   }
+
+  Future<QuerySnapshot> getPendingShopOwners() async {
+    return _firestore
+        .collection('shopOwners')
+        .where('applicationStatus', isEqualTo: 'pending')
+        .get();
+  }
+
+  Future<void> updateShopOwnerStatus(String uid, String status) async {
+    Map<String, dynamic> updateData = {
+      'applicationStatus': status,
+      if (status == 'approved') 'approvedAt': FieldValue.serverTimestamp(),
+      if (status == 'rejected') 'rejectedAt': FieldValue.serverTimestamp(),
+    };
+    await _firestore.collection('shopOwners').doc(uid).update(updateData);
+  }
+
+
 
   /// ------------------------------------------------
   /// REGISTER USER
@@ -63,7 +84,7 @@ class DatabaseService {
   }
 
   /// ------------------------------------------------
-  /// REGISTER DRIVER — with PENDING STATUS
+  /// REGISTER DRIVER
   /// ------------------------------------------------
   Future<String?> registerDriver(DriverRegistrationData data) async {
     try {
@@ -80,14 +101,47 @@ class DatabaseService {
       driverMap['isAdmin'] = false;
       driverMap['createdAt'] = FieldValue.serverTimestamp();
 
-      /// ------------------------------------------------
-      /// 🔥 NEW FIELDS FOR DRIVER APPROVAL WORKFLOW
-      /// ------------------------------------------------
-      driverMap['applicationStatus'] = "pending";      // pending / approved / rejected
+      driverMap['applicationStatus'] = "pending";
       driverMap['approvedAt'] = null;
       driverMap['rejectedAt'] = null;
 
       await _firestore.collection('drivers').doc(uid).set(driverMap);
+
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return "Unexpected error: $e";
+    }
+  }
+
+  /// ------------------------------------------------
+  /// REGISTER SHOP OWNER
+  /// ------------------------------------------------
+  Future<String?> registerShopOwner(ShopOwnerRegistrationData data) async {
+    try {
+      if (!data.isValidStep1() || !data.isValidStep2()) {
+        return "Please complete all required fields.";
+      }
+
+      UserCredential cred = await _auth.createUserWithEmailAndPassword(
+        email: data.email!,
+        password: data.password!,
+      );
+
+      String uid = cred.user!.uid;
+
+      Map<String, dynamic> shopMap = cleanMap(data.toMap());
+      shopMap['uid'] = uid;
+      shopMap['role'] = "shopOwner";
+      shopMap['isAdmin'] = false;
+      shopMap['createdAt'] = FieldValue.serverTimestamp();
+
+      shopMap['applicationStatus'] = "pending";
+      shopMap['approvedAt'] = null;
+      shopMap['rejectedAt'] = null;
+
+      await _firestore.collection('shopOwners').doc(uid).set(shopMap);
 
       return null; // Success
     } on FirebaseAuthException catch (e) {
@@ -119,7 +173,7 @@ class DatabaseService {
   }
 
   /// ------------------------------------------------
-  /// LOGIN (user / driver / admin)
+  /// LOGIN (user / driver / shopOwner / admin)
   /// ------------------------------------------------
   Future<String> loginUser(String email, String password) async {
     try {
@@ -130,35 +184,30 @@ class DatabaseService {
 
       String uid = cred.user!.uid;
 
-      /// 🔹 First check USERS collection
-      DocumentSnapshot userDoc =
-      await _firestore.collection('users').doc(uid).get();
-
+      /// Check USERS collection
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
       if (userDoc.exists) {
         bool isAdmin = userDoc.get('isAdmin') ?? false;
         String role = userDoc.get('role') ?? "user";
         return isAdmin ? "admin" : role;
       }
 
-      /// 🔹 Then check DRIVERS collection
-      DocumentSnapshot driverDoc =
-      await _firestore.collection('drivers').doc(uid).get();
-
+      /// Check DRIVERS collection
+      DocumentSnapshot driverDoc = await _firestore.collection('drivers').doc(uid).get();
       if (driverDoc.exists) {
         String status = driverDoc.get('applicationStatus') ?? "pending";
+        if (status == "pending") throw "Your application is under review. Please wait for approval.";
+        if (status == "rejected") throw "Your application has been rejected.";
+        return "driver";
+      }
 
-        /// ------------------------------------------------
-        /// 🔥 NEW DRIVER STATUS CHECK DURING LOGIN
-        /// ------------------------------------------------
-        if (status == "pending") {
-          throw "Your application is under review. Please wait for approval.";
-        }
-
-        if (status == "rejected") {
-          throw "Your application has been rejected.";
-        }
-
-        return "driver"; // APPROVED
+      /// Check SHOP OWNERS collection
+      DocumentSnapshot shopOwnerDoc = await _firestore.collection('shopOwners').doc(uid).get();
+      if (shopOwnerDoc.exists) {
+        String status = shopOwnerDoc.get('applicationStatus') ?? "pending";
+        if (status == "pending") throw "Your application is under review. Please wait for approval.";
+        if (status == "rejected") throw "Your application has been rejected.";
+        return "shopOwner";
       }
 
       throw "Profile not found. Please contact support.";
@@ -177,6 +226,26 @@ class DatabaseService {
       }
     } catch (e) {
       throw e.toString();
+    }
+  }
+
+  /// ------------------------------------------------
+  /// GET SHOP OWNER STATUS (for login handling)
+  /// ------------------------------------------------
+  /// Get shop owner status by email
+  Future<String> getShopOwnerStatus(String email) async {
+    try {
+      var query = await _firestore
+          .collection('shopOwners')
+          .where('email', isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) return "not_found";
+
+      return query.docs.first.get('applicationStatus') ?? "pending";
+    } catch (e) {
+      return "unknown";
     }
   }
 }

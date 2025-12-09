@@ -35,50 +35,50 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
+      // Attempt login
       String role = await dbService.loginUser(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
 
-      // SUCCESSFUL LOGIN → Based on role
+      // Redirect based on role
       if (role == "admin") {
         Navigator.pushReplacementNamed(context, AppRoutes.adminHome);
-      }
-      else if (role == "driver") {
+      } else if (role == "driver") {
         Navigator.pushReplacementNamed(context, AppRoutes.driverHome);
-      }
-      else {
+      } else if (role == "shopOwner") {
+        String status = await dbService.getShopOwnerStatus(emailController.text.trim());
+
+        if (status == "approved") {
+          Navigator.pushReplacementNamed(context, AppRoutes.shopOwnerHome);
+        } else if (status == "pending") {
+          showNotification(
+            "Your application is under review. Please wait for approval.",
+            color: Colors.orange,
+          );
+        } else if (status == "rejected") {
+          showNotification(
+            "Your application was rejected.",
+            color: Colors.red,
+          );
+        } else {
+          showNotification("Unknown status. Contact support.");
+        }
+      } else {
         Navigator.pushReplacementNamed(context, AppRoutes.userHome);
       }
 
-      showNotification("Login successful!", color: Colors.green);
-    }
-    catch (e) {
-      String message = e.toString().replaceAll("Exception:", "").trim();
+      if (role == "admin" || role == "driver" || (role == "shopOwner" && await dbService.getShopOwnerStatus(emailController.text.trim()) == "approved")) {
+        showNotification("Login successful!", color: Colors.green);
+      }
 
-      // 🔥 Handle new driver status messages
-      if (message.contains("under review")) {
-        showNotification(
-          "Your application is under review. Please wait for approval.",
-          color: Colors.orange,
-        );
-      }
-      else if (message.contains("rejected")) {
-        showNotification(
-          "Your driver application was rejected.",
-          color: Colors.red,
-        );
-      }
-      else {
-        // Other errors (wrong password, no user, etc.)
-        showNotification(message);
-      }
-    }
-    finally {
+    } catch (e) {
+      String message = e.toString().replaceAll("Exception:", "").trim();
+      showNotification(message);
+    } finally {
       setState(() => isLoading = false);
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +105,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -134,13 +133,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 34),
-
                             TextFormField(
                               controller: emailController,
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Enter your email";
-                                }
+                                if (value == null || value.isEmpty) return "Enter your email";
                                 return null;
                               },
                               decoration: InputDecoration(
@@ -155,14 +151,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 18),
-
                             TextFormField(
                               controller: passwordController,
                               obscureText: !showPassword,
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return "Enter your password";
-                                }
+                                if (value == null || value.isEmpty) return "Enter your password";
                                 return null;
                               },
                               decoration: InputDecoration(
@@ -184,7 +177,6 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                             const SizedBox(height: 35),
-
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -201,32 +193,26 @@ class _LoginPageState extends State<LoginPage> {
                                     : const Text('Login', style: TextStyle(color: Colors.white)),
                               ),
                             ),
-
                             const SizedBox(height: 18),
-
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                                  onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                                   child: const Text("Forgot Password?"),
                                 ),
                                 TextButton(
-                                  onPressed: () =>
-                                      Navigator.pushNamed(context, AppRoutes.register),
+                                  onPressed: () => Navigator.pushNamed(context, AppRoutes.register),
                                   child: const Text("Register"),
                                 ),
                               ],
                             ),
-
                             const SizedBox(height: 20),
                           ],
                         ),
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
