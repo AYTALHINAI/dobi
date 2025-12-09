@@ -17,7 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final DatabaseService dbService = DatabaseService();
 
   bool isLoading = false;
-  bool showPassword = false; // toggle password
+  bool showPassword = false;
 
   void showNotification(String message, {Color color = Colors.red}) {
     Fluttertoast.showToast(
@@ -40,21 +40,45 @@ class _LoginPageState extends State<LoginPage> {
         passwordController.text.trim(),
       );
 
+      // SUCCESSFUL LOGIN → Based on role
       if (role == "admin") {
         Navigator.pushReplacementNamed(context, AppRoutes.adminHome);
-      } else if (role == "driver") {
+      }
+      else if (role == "driver") {
         Navigator.pushReplacementNamed(context, AppRoutes.driverHome);
-      } else {
+      }
+      else {
         Navigator.pushReplacementNamed(context, AppRoutes.userHome);
       }
 
       showNotification("Login successful!", color: Colors.green);
-    } catch (e) {
-      showNotification(e.toString().replaceAll("Exception:", "").trim());
-    } finally {
+    }
+    catch (e) {
+      String message = e.toString().replaceAll("Exception:", "").trim();
+
+      // 🔥 Handle new driver status messages
+      if (message.contains("under review")) {
+        showNotification(
+          "Your application is under review. Please wait for approval.",
+          color: Colors.orange,
+        );
+      }
+      else if (message.contains("rejected")) {
+        showNotification(
+          "Your driver application was rejected.",
+          color: Colors.red,
+        );
+      }
+      else {
+        // Other errors (wrong password, no user, etc.)
+        showNotification(message);
+      }
+    }
+    finally {
       setState(() => isLoading = false);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,18 +87,12 @@ class _LoginPageState extends State<LoginPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Optional overlay (grey shades instead of purple)
-          Container(
-            color: Colors.grey.shade300.withOpacity(0.9),
-          ),
-
-          // Main Content
+          Container(color: Colors.grey.shade300.withOpacity(0.9)),
           SingleChildScrollView(
             child: SizedBox(
-              height: screenHeight, // occupy full screen
+              height: screenHeight,
               child: Column(
                 children: [
-                  // Top Logo Placeholder
                   Container(
                     height: screenHeight * 0.25,
                     alignment: Alignment.center,
@@ -88,7 +106,6 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
 
-                  // Login Form expanded to fill rest
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -103,7 +120,6 @@ class _LoginPageState extends State<LoginPage> {
                       child: Form(
                         key: _formKey,
                         child: Column(
-                          mainAxisSize: MainAxisSize.max,
                           children: [
                             const SizedBox(height: 24),
                             Align(
@@ -119,10 +135,14 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             const SizedBox(height: 34),
 
-                            // Email Field
                             TextFormField(
                               controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Enter your email";
+                                }
+                                return null;
+                              },
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.email, color: Colors.grey.shade700),
                                 hintText: 'Email',
@@ -132,25 +152,19 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(15),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return "Please enter your email.";
-                                }
-                                final validEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value);
-                                if (!validEmail) {
-                                  return "Please enter a valid email address.";
-                                }
-                                return null;
-                              },
                             ),
                             const SizedBox(height: 18),
 
-                            // Password Field with toggle
                             TextFormField(
                               controller: passwordController,
                               obscureText: !showPassword,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return "Enter your password";
+                                }
+                                return null;
+                              },
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock, color: Colors.grey.shade700),
                                 hintText: 'Password',
@@ -160,159 +174,59 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(15),
                                   borderSide: BorderSide.none,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     showPassword ? Icons.visibility : Icons.visibility_off,
                                     color: Colors.grey.shade700,
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      showPassword = !showPassword;
-                                    });
-                                  },
+                                  onPressed: () => setState(() => showPassword = !showPassword),
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return "Please enter your password.";
-                                }
-                                return null;
-                              },
                             ),
                             const SizedBox(height: 35),
 
-                            // Login Button
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: isLoading ? null : login,
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
+                                  backgroundColor: Colors.black87,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  backgroundColor: Colors.black87,
-                                  textStyle: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 child: isLoading
                                     ? const CircularProgressIndicator(color: Colors.white)
-                                    : const Text(
-                                  'Login',
-                                  style: TextStyle(color: Colors.white),
-                                ),
+                                    : const Text('Login', style: TextStyle(color: Colors.white)),
                               ),
                             ),
 
                             const SizedBox(height: 18),
 
-                            // Forgot Password & Register Links
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, AppRoutes.forgotPassword);
-                                  },
-                                  child: Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade800,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  onPressed: () =>
+                                      Navigator.pushNamed(context, AppRoutes.forgotPassword),
+                                  child: const Text("Forgot Password?"),
                                 ),
                                 TextButton(
-                                  onPressed: () {
-                                    Navigator.pushNamed(context, AppRoutes.register);
-                                  },
-                                  child: Text(
-                                    "Register",
-                                    style: TextStyle(
-                                      color: Colors.grey.shade800,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  onPressed: () =>
+                                      Navigator.pushNamed(context, AppRoutes.register),
+                                  child: const Text("Register"),
                                 ),
                               ],
                             ),
 
-                            const SizedBox(height: 10),
                             const SizedBox(height: 20),
-
-                            // Divider with text
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.grey.shade400,
-                                    thickness: 1,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'or sign in with',
-                                  style: TextStyle(color: Colors.grey.shade700),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Divider(
-                                    color: Colors.grey.shade400,
-                                    thickness: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 30),
-
-                            // Social login buttons (non-functional for now)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                // Google
-                                Container(
-                                  height: 70,
-                                  width: 70,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.grey.shade200,
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/google.png', // add your logo here
-                                      height: 50,
-                                      width: 50,
-                                    ),
-                                  ),
-                                ),
-                                // Facebook
-                                Container(
-                                  height: 70,
-                                  width: 70,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.grey.shade200,
-                                  ),
-                                  child: Center(
-                                    child: Image.asset(
-                                      'assets/Facebook.png', // add your logo here
-                                      height: 68,
-                                      width: 68,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
                           ],
                         ),
                       ),
                     ),
                   ),
+
                 ],
               ),
             ),

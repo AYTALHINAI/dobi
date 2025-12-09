@@ -21,6 +21,7 @@ class DriverStep3License extends StatelessWidget {
               height: screenHeight,
               child: Column(
                 children: [
+                  // ---------------------- HEADER ----------------------
                   Container(
                     height: screenHeight * 0.25,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
@@ -38,27 +39,17 @@ class DriverStep3License extends StatelessWidget {
                           },
                         ),
                         const Spacer(),
-                        Center(
+                        const Center(
                           child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Text(
                                 "Step 3: Confirm Information",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 8),
                               Text(
                                 "Submit to complete registration",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black54,
-                                ),
-                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 16, color: Colors.black54),
                               ),
                             ],
                           ),
@@ -67,9 +58,9 @@ class DriverStep3License extends StatelessWidget {
                     ),
                   ),
 
+                  // ---------------------- BODY ----------------------
                   Expanded(
                     child: Container(
-                      width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.95),
@@ -81,39 +72,49 @@ class DriverStep3License extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 16),
                           StepTrackerBar(currentStep: 3, totalSteps: 3),
                           const SizedBox(height: 24),
                           _reviewSection(),
                           const SizedBox(height: 30),
+
+                          // ---------------------- SUBMIT BUTTON ----------------------
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
                               onPressed: () async {
                                 final dbService = DatabaseService();
 
+                                // Show loading
                                 showDialog(
                                   context: context,
                                   barrierDismissible: false,
                                   builder: (_) => const Center(child: CircularProgressIndicator()),
                                 );
 
+                                // Register Driver
                                 String? error = await dbService.registerDriver(data);
 
-                                Navigator.pop(context);
+                                Navigator.pop(context); // close loading
 
                                 if (error != null) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(content: Text("Error: $error")),
                                   );
                                 } else {
+                                  // Success: Application submitted with "pending" status
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("Driver registration complete!")),
+                                    const SnackBar(
+                                      content: Text(
+                                        "Application submitted! Please wait for approval.",
+                                      ),
+                                      backgroundColor: Colors.green,
+                                    ),
                                   );
 
+                                  // Navigate back to login and clear history
                                   Navigator.pushNamedAndRemoveUntil(
                                     context,
-                                    AppRoutes.driverHome,
+                                    AppRoutes.login,
                                         (route) => false,
                                   );
                                 }
@@ -144,6 +145,7 @@ class DriverStep3License extends StatelessWidget {
     );
   }
 
+  // ---------------------- REVIEW SECTION ----------------------
   Widget _reviewSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

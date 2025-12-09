@@ -22,6 +22,10 @@ import '../screens/admin/admin_home_page.dart';
 import '../screens/user/user_home_page.dart';
 import '../screens/driver/driver_home_page.dart';
 
+// Add these imports at the top
+import '../screens/admin/driverApplicants/DriverApplicantDetailPage.dart';
+import '../screens/admin/driverApplicants/DriverApplicantsPage.dart';
+
 class AppRoutes {
   // AUTH
   static const String login = '/login';
@@ -42,6 +46,10 @@ class AppRoutes {
   static const String adminHome = '/home/admin';
   static const String userHome = '/home/user';
   static const String driverHome = '/home/driver';
+
+  // NEW ADMIN PAGES
+  static const String adminDriverApplicants = '/admin/drivers';
+  static const String adminDriverDetail = '/admin/driver-detail';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -77,6 +85,13 @@ class AppRoutes {
         return MaterialPageRoute(
             builder: (_) => DriverStep3License(data: driverData));
 
+    // NEW ADMIN PAGES
+      case adminDriverApplicants:
+        return MaterialPageRoute(builder: (_) => const DriverApplicantsPage());
+      case adminDriverDetail:
+        final driverData = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+            builder: (_) => DriverApplicantDetailPage(driverData: driverData));
 
     // HOME PAGES
       case adminHome:
