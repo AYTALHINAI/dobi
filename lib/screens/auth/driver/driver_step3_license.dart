@@ -4,139 +4,222 @@ import '../../widgets/step_tracker_bar.dart';
 import '../../../routes/app_routes.dart';
 import '../../../database.dart';
 
-class DriverStep3License extends StatelessWidget {
+class DriverStep3License extends StatefulWidget {
   final DriverRegistrationData data;
   const DriverStep3License({super.key, required this.data});
 
   @override
+  State<DriverStep3License> createState() => _DriverStep3LicenseState();
+}
+
+class _DriverStep3LicenseState extends State<DriverStep3License> {
+  bool isSubmitting = false;
+
+  @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    const Color primaryDeep = Color(0xFF1A237E);
+    const Color primaryLight = Color(0xFF3949AB);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Container(color: Colors.grey.shade300.withOpacity(0.9)),
-          SingleChildScrollView(
-            child: SizedBox(
-              height: screenHeight,
-              child: Column(
-                children: [
-                  // ---------------------- HEADER ----------------------
-                  Container(
-                    height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(
-                              context,
-                              AppRoutes.driverRegisterStep2,
-                              arguments: data,
-                            );
-                          },
-                        ),
-                        const Spacer(),
-                        const Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                "Step 3: Confirm Information",
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Submit to complete registration",
-                                style: TextStyle(fontSize: 16, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          // 1. BACKGROUND GRADIENT
+          Container(
+            height: size.height * 0.45,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryDeep, primaryLight],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
 
-                  // ---------------------- BODY ----------------------
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
+          // 2. SCROLLABLE CONTENT
+          SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRoutes.driverRegisterStep2,
+                                    arguments: widget.data,
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
+
+                    const Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          StepTrackerBar(currentStep: 3, totalSteps: 3),
-                          const SizedBox(height: 24),
-                          _reviewSection(),
-                          const SizedBox(height: 30),
-
-                          // ---------------------- SUBMIT BUTTON ----------------------
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: () async {
-                                final dbService = DatabaseService();
-
-                                // Show loading
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (_) => const Center(child: CircularProgressIndicator()),
-                                );
-
-                                // Register Driver
-                                String? error = await dbService.registerDriver(data);
-
-                                Navigator.pop(context); // close loading
-
-                                if (error != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("Error: $error")),
-                                  );
-                                } else {
-                                  // Success: Application submitted with "pending" status
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Application submitted! Please wait for approval.",
-                                      ),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
-
-                                  // Navigate back to login and clear history
-                                  Navigator.pushNamedAndRemoveUntil(
-                                    context,
-                                    AppRoutes.login,
-                                        (route) => false,
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black87,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                              child: const Text(
-                                "Complete Registration",
-                                style: TextStyle(color: Colors.white, fontSize: 16),
-                              ),
+                          Icon(
+                            Icons.check_circle_outline_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Step 3',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                          Text(
+                            'Confirm & Register',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 1,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const StepTrackerBar(
+                              currentStep: 3, 
+                              totalSteps: 3,
+                              stepLabels: ['Personal', 'Vehicle', 'License'],
+                            ),
+                            const SizedBox(height: 24),
+
+                            Text(
+                              "Please review your information:",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey.shade800,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            _buildInfoCard(
+                              "Personal Details",
+                              Icons.person,
+                              [
+                                _buildInfoRow("Full Name", widget.data.fullName),
+                                _buildInfoRow("Phone", widget.data.phone),
+                                _buildInfoRow("Email", widget.data.email),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInfoCard(
+                              "Vehicle Details",
+                              Icons.directions_car,
+                              [
+                                _buildInfoRow("Vehicle Type", widget.data.vehicleType),
+                                _buildInfoRow("Plate Number", widget.data.plateNumber),
+                                _buildInfoRow("License No.", widget.data.licenseNumber),
+                              ],
+                            ),
+
+                            const SizedBox(height: 35),
+
+                            // SUBMIT BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: isSubmitting ? null : _submitRegistration,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryDeep,
+                                  foregroundColor: Colors.white,
+                                  elevation: 8,
+                                  shadowColor: primaryDeep.withOpacity(0.4),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: isSubmitting
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white, strokeWidth: 2.5),
+                                      )
+                                    : const Text(
+                                        'COMPLETE REGISTRATION',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.5,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -145,33 +228,97 @@ class DriverStep3License extends StatelessWidget {
     );
   }
 
-  // ---------------------- REVIEW SECTION ----------------------
-  Widget _reviewSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Review your info:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        _reviewRow("Full Name", data.fullName),
-        _reviewRow("Phone", data.phone),
-        _reviewRow("Email", data.email),
-        _reviewRow("Vehicle Type", data.vehicleType),
-        _reviewRow("Plate Number", data.plateNumber),
-        _reviewRow("License Number", data.licenseNumber),
-      ],
-    );
-  }
-
-  Widget _reviewRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildInfoCard(String title, IconData icon, List<Widget> children) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
+          Row(
+            children: [
+              Icon(icon, size: 20, color: const Color(0xFF1A237E)),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A237E),
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          ...children,
         ],
       ),
     );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isEmpty ? "-" : value,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.blueGrey.shade900,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitRegistration() async {
+    setState(() => isSubmitting = true);
+    final dbService = DatabaseService();
+
+    String? error = await dbService.registerDriver(widget.data);
+
+    if (!mounted) return;
+    setState(() => isSubmitting = false);
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $error"), backgroundColor: Colors.red),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Application submitted! Pending approval."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (route) => false,
+      );
+    }
   }
 }

@@ -22,7 +22,7 @@ import '../screens/auth/driver/driver_registration_model.dart';
 import '../screens/admin/admin_home_page.dart';
 import '../screens/user/user_home_page.dart';
 import '../screens/driver/driver_home_page.dart';
-import '../screens/shopOwner/shopOwner_home_page.dart'; // <- Import ShopOwnerHomePage
+import '../screens/shopOwner/shopOwner_home_page.dart';
 
 // SHOP OWNER REGISTRATION STEPS
 import '../screens/auth/shopOwner/Shop_Owner_Registration_Step1.dart';
@@ -56,9 +56,9 @@ class AppRoutes {
   static const String driverRegisterStep3 = '/register/driver/step3';
 
   // SHOP OWNER REGISTRATION MULTI-STEP
-  static const String shopOwnerStep1 = '/register/shopOwner/step1';
-  static const String shopOwnerStep2 = '/register/shopOwner/step2';
-  static const String shopOwnerStep3 = '/register/shopOwner/step3';
+  static const String shopRegisterStep1 = '/register/shopOwner/step1';
+  static const String shopRegisterStep2 = '/register/shopOwner/step2';
+  static const String shopRegisterStep3 = '/register/shopOwner/step3';
 
   // HOME PAGES
   static const String adminHome = '/home/admin';
@@ -106,12 +106,12 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => DriverStep3License(data: driverData));
 
     // SHOP OWNER REGISTRATION
-      case shopOwnerStep1:
+      case shopRegisterStep1:
         return MaterialPageRoute(builder: (_) => const ShopOwnerStep1Personal());
-      case shopOwnerStep2:
+      case shopRegisterStep2:
         final shopOwnerData = settings.arguments as ShopOwnerRegistrationData;
         return MaterialPageRoute(builder: (_) => ShopOwnerStep2ShopInfo(data: shopOwnerData));
-      case shopOwnerStep3:
+      case shopRegisterStep3:
         final shopOwnerData = settings.arguments as ShopOwnerRegistrationData;
         return MaterialPageRoute(builder: (_) => ShopOwnerStep3Terms(data: shopOwnerData));
 

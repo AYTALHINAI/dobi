@@ -35,166 +35,231 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    const Color primaryDeep = Color(0xFF1A237E);
+    const Color primaryLight = Color(0xFF3949AB);
+
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Top grey background
-          Container(color: Colors.grey.shade300.withOpacity(0.9)),
+          // 1. BACKGROUND GRADIENT
+          Container(
+            height: size.height * 0.45,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryDeep, primaryLight],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
 
-          // Scrollable content
+          // 2. SCROLLABLE CONTENT
           SingleChildScrollView(
-            child: Column(
-              children: [
-                // Top section
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            AppRoutes.driverRegisterStep1,
-                            arguments: widget.data,
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Text(
-                              "Step 2: Vehicle & License Info",
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            Text(
-                              "Next: Confirm Information",
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.black54,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  FocusScope.of(context).unfocus();
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRoutes.driverRegisterStep1,
+                                    arguments: widget.data,
+                                  );
+                                },
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                // White form container
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
                     ),
-                  ),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        StepTrackerBar(currentStep: 2, totalSteps: 3),
-                        const SizedBox(height: 24),
 
-                        // Vehicle Type
-                        _buildField(
-                          vehicleTypeController,
-                          "Vehicle Type",
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return "Enter Vehicle Type";
-                            if (v.trim().length < 4) return "Vehicle Type must be at least 4 characters";
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Vehicle Plate Number
-                        _buildField(
-                          plateNumberController,
-                          "Vehicle Plate Number",
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return "Enter Vehicle Plate Number";
-
-                            // Oman plate number regex: up to 5 digits, 1+ letters, optional single letter
-                            if (!RegExp(r'^\d{1,5}[A-Z]+[A-Z]?$').hasMatch(v.trim())) {
-                              return "Invalid Oman plate number format";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        // Plate Number Info Box
-                        _infoBox(
-                          "Format: 1(234) A(B)\n- Up to 5 digits at the start\n- 1 or more letters in the middle\n- Optional single letter at the end\n- Uppercase letters only",
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Driver License Number
-                        _buildField(
-                          licenseNumberController,
-                          "Driver License Number",
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return "Enter Driver License Number";
-                            if (!RegExp(r'^[A-Z0-9]+$').hasMatch(v.trim())) {
-                              return "Invalid license number format";
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        // License Info Box
-                        _infoBox(
-                          "Format: e.g., D1234567\nOnly uppercase letters and numbers allowed",
-                        ),
-                        const SizedBox(height: 30),
-
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              if (_formKey.currentState!.validate()) {
-                                widget.data.vehicleType = vehicleTypeController.text;
-                                widget.data.plateNumber = plateNumberController.text;
-                                widget.data.licenseNumber = licenseNumberController.text;
-
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRoutes.driverRegisterStep3,
-                                  arguments: widget.data,
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.black87,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                            ),
-                            child: const Text(
-                              "Next",
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                    const Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.local_shipping_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Step 2',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 30),
-                      ],
+                           SizedBox(height: 4),
+                          Text(
+                            'Vehicle Info',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const StepTrackerBar(
+                                currentStep: 2, 
+                                totalSteps: 3,
+                                stepLabels: ['Personal', 'Vehicle', 'License'],
+                              ),
+                              const SizedBox(height: 24),
+
+                              _buildTextField(
+                                vehicleTypeController,
+                                "Vehicle Type",
+                                Icons.directions_car,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return "Enter Vehicle Type";
+                                  if (v.trim().length < 4) return "Vehicle Type must be at least 4 characters";
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildTextField(
+                                plateNumberController,
+                                "Vehicle Plate Number",
+                                Icons.pin_drop,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return "Enter Vehicle Plate Number";
+                                  if (!RegExp(r'^\d{1,5}[A-Z]+[A-Z]?$').hasMatch(v.trim())) {
+                                    return "Invalid Oman plate format (e.g., 1234AB)";
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 8),
+                              _infoBox("Format: 1234AB (Max 5 digits, then letters)"),
+                              
+                              const SizedBox(height: 16),
+
+                              _buildTextField(
+                                licenseNumberController,
+                                "Driver License Number",
+                                Icons.credit_card,
+                                validator: (v) {
+                                  if (v == null || v.trim().isEmpty) return "Enter License Number";
+                                  if (!RegExp(r'^[A-Z0-9]+$').hasMatch(v.trim())) {
+                                    return "Invalid license number format";
+                                  }
+                                  return null;
+                                },
+                              ),
+
+                              const SizedBox(height: 35),
+
+                              // NEXT BUTTON
+                              SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (_formKey.currentState!.validate()) {
+                                      widget.data.vehicleType = vehicleTypeController.text.trim();
+                                      widget.data.plateNumber = plateNumberController.text.trim();
+                                      widget.data.licenseNumber = licenseNumberController.text.trim();
+
+                                      Navigator.pushNamed(
+                                        context,
+                                        AppRoutes.driverRegisterStep3,
+                                        arguments: widget.data,
+                                      );
+                                    }
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryDeep,
+                                    foregroundColor: Colors.white,
+                                    elevation: 8,
+                                    shadowColor: primaryDeep.withOpacity(0.4),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'NEXT STEPS',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -202,24 +267,38 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
     );
   }
 
-  Widget _buildField(
-      TextEditingController controller,
-      String label, {
-        String? Function(String?)? validator,
-      }) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    String? Function(String?)? validator,
+  }) {
+    const primaryDeep = Color(0xFF1A237E);
+
     return TextFormField(
       controller: controller,
+      validator: validator,
+      style: const TextStyle(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: const Color(0xFF5C6BC0)),
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey.shade600),
         filled: true,
-        fillColor: Colors.grey.shade200,
-        hintText: label,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryDeep, width: 1.5),
+        ),
       ),
-      validator: validator ?? (v) => v == null || v.isEmpty ? "Enter $label" : null,
     );
   }
 
@@ -228,13 +307,13 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Colors.blue.shade50.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Colors.blue.shade100),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 12),
+        style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700),
       ),
     );
   }

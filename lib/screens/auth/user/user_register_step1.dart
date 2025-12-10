@@ -32,108 +32,147 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    // Using simple size to avoid complex rebuilds
+    final size = MediaQuery.of(context).size;
 
+    // Premium Color Palette
+    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
+    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // TOP GRADIENT LIKE FORGOT PASSWORD
+          // 1. BACKGROUND GRADIENT
           Container(
+            height: size.height * 0.45,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF6A85B6), // Soft blue
-                  Color(0xFFBAC8E0), // Lighter blue
-                ],
+                colors: [primaryDeep, primaryLight],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
               ),
             ),
           ),
 
+          // 2. SCROLLABLE CONTENT
           SingleChildScrollView(
-            child: SizedBox(
-              height: screenHeight,
-              child: Column(
-                children: [
-                  // HEADER SECTION WITH GRADIENT
-                  Container(
-                    height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: Colors.white.withOpacity(0.8),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.black87, size: 26),
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(context, AppRoutes.register);
-                            },
-                          ),
-                        ),
-
-                        const Spacer(),
-
-                        // ORIGINAL TOP TEXT RESTORED
-                        const Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Step 1: Personal Information",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  FocusScope.of(context).unfocus();
+                                  Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                },
                               ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Next: Location Information",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // WHITE CURVED FORM SECTION
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.94),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
+                            ),
+                          ],
                         ),
                       ),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                    ),
+
+                    const Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.person_add_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Step 1',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                          Text(
+                            'Personal Info',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
                         child: Form(
                           key: _formKey,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 16),
-                              StepTrackerBar(currentStep: 1, totalSteps: 3),
+                              const StepTrackerBar(
+                                currentStep: 1, 
+                                totalSteps: 3,
+                                stepLabels: ['Personal', 'Address', 'Confirm'],
+                              ),
                               const SizedBox(height: 24),
 
-                              _buildTextField(nameController, "Full Name"),
+                              _buildTextField(nameController, "Full Name", Icons.person_outline),
                               const SizedBox(height: 16),
 
                               _buildTextField(
                                 phoneController,
                                 "Phone Number",
+                                Icons.phone_outlined,
                                 keyboardType: TextInputType.phone,
                               ),
                               const SizedBox(height: 16),
@@ -141,6 +180,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                               _buildTextField(
                                 emailController,
                                 "Email",
+                                Icons.email_outlined,
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               const SizedBox(height: 16),
@@ -148,39 +188,36 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                               _buildTextField(
                                 passwordController,
                                 "Password",
+                                Icons.lock_outline,
                                 obscureText: true,
                               ),
 
-                              // PASSWORD REQUIREMENT BOX
+                              // PASSWORD REQUIREMENTS
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.all(14),
                                 margin: const EdgeInsets.only(top: 10),
                                 decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
+                                  color: Colors.blue.shade50.withOpacity(0.5),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.grey.shade400),
+                                  border: Border.all(color: Colors.blue.shade100),
                                 ),
-                                child: const Column(
+                                child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "Your password must contain:",
+                                      "Password Requirements:",
                                       style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.4,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue.shade800,
                                       ),
                                     ),
-                                    SizedBox(height: 8),
-                                    Text("• Minimum 6 characters",
-                                        style: TextStyle(fontSize: 14, height: 1.4)),
-                                    Text("• At least 1 uppercase letter (A–Z)",
-                                        style: TextStyle(fontSize: 14, height: 1.4)),
-                                    Text("• At least 1 lowercase letter (a–z)",
-                                        style: TextStyle(fontSize: 14, height: 1.4)),
-                                    Text("• At least 1 number (0–9)",
-                                        style: TextStyle(fontSize: 14, height: 1.4)),
+                                    const SizedBox(height: 8),
+                                    _buildReqText("Minimum 6 characters"),
+                                    _buildReqText("At least 1 uppercase (A-Z)"),
+                                    _buildReqText("At least 1 lowercase (a-z)"),
+                                    _buildReqText("At least 1 number (0-9)"),
                                   ],
                                 ),
                               ),
@@ -190,19 +227,22 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                               _buildTextField(
                                 confirmPasswordController,
                                 "Confirm Password",
+                                Icons.lock_reset_outlined,
                                 obscureText: true,
                               ),
 
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 35),
 
+                              // NEXT BUTTON
                               SizedBox(
                                 width: double.infinity,
+                                height: 55,
                                 child: ElevatedButton(
                                   onPressed: () {
                                     if (_formKey.currentState!.validate()) {
-                                      data.fullName = nameController.text;
-                                      data.phone = phoneController.text;
-                                      data.email = emailController.text;
+                                      data.fullName = nameController.text.trim();
+                                      data.phone = phoneController.text.trim();
+                                      data.email = emailController.text.trim();
                                       data.password = passwordController.text;
 
                                       Navigator.pushNamed(
@@ -213,27 +253,32 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.indigo.shade700,
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    backgroundColor: primaryDeep,
+                                    foregroundColor: Colors.white,
+                                    elevation: 8,
+                                    shadowColor: primaryDeep.withOpacity(0.4),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(15),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                   ),
                                   child: const Text(
-                                    "Next",
-                                    style: TextStyle(color: Colors.white, fontSize: 18),
+                                    'NEXT STEPS',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
                                   ),
                                 ),
                               ),
-
                               const SizedBox(height: 20),
                             ],
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -242,35 +287,29 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
     );
   }
 
-  // INPUT FIELD BUILDER MATCHING FORGOT PASSWORD STYLE
+  Widget _buildReqText(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        "• $text",
+        style: TextStyle(fontSize: 13, color: Colors.blueGrey.shade700),
+      ),
+    );
+  }
+
   Widget _buildTextField(
-      TextEditingController controller,
-      String label, {
-        bool obscureText = false,
-        TextInputType? keyboardType,
-      }) {
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool obscureText = false,
+    TextInputType? keyboardType,
+  }) {
+    const primaryDeep = Color(0xFF1A237E);
+    
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        hintText: label,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: Colors.indigo.shade400, width: 2)),
-      ),
-
       validator: (v) {
         if (v == null || v.trim().isEmpty) return "Enter $label";
 
@@ -308,6 +347,27 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
 
         return null;
       },
+      style: const TextStyle(fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: const Color(0xFF5C6BC0)),
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey.shade600),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryDeep, width: 1.5),
+        ),
+      ),
     );
   }
 }

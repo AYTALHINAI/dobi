@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../routes/app_routes.dart';
-import 'shop_owner_registration_model.dart';
-import '../../../../database.dart'; // ← import DatabaseService
+import '../../../../database.dart';
+import '../../widgets/step_tracker_bar.dart';
+import 'shop_owner_registration_model.dart'; // Corrected Import
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ShopOwnerStep3Terms extends StatefulWidget {
   final ShopOwnerRegistrationData data;
@@ -12,152 +14,287 @@ class ShopOwnerStep3Terms extends StatefulWidget {
 }
 
 class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
-  bool agreed = false;
-  bool isLoading = false;
-  final DatabaseService dbService = DatabaseService();
-
-  @override
-  void initState() {
-    super.initState();
-    agreed = widget.data.agreedToTerms;
-  }
-
-  void showNotification(String message, {Color color = Colors.red}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: color),
-    );
-  }
-
-  Future<void> submitApplication() async {
-    setState(() => isLoading = true);
-    widget.data.agreedToTerms = agreed;
-
-    try {
-      String? result = await dbService.registerShopOwner(widget.data);
-      if (result == null) {
-        showNotification("Application submitted successfully!", color: Colors.green);
-        Navigator.pushReplacementNamed(context, AppRoutes.login);
-      } else {
-        showNotification(result);
-      }
-    } catch (e) {
-      showNotification("Unexpected error: $e");
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
+  bool isAgreed = false;
+  bool isSubmitting = false;
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    final size = MediaQuery.of(context).size;
+    const Color primaryDeep = Color(0xFF1A237E);
+    const Color primaryLight = Color(0xFF3949AB);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Container(color: Colors.grey.shade300.withOpacity(0.9)),
+          // 1. BACKGROUND GRADIENT
+          Container(
+            height: size.height * 0.45,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryDeep, primaryLight],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // 2. SCROLLABLE CONTENT
           SingleChildScrollView(
-            child: SizedBox(
-              height: screenHeight,
-              child: Column(
-                children: [
-                  Container(
-                    height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Spacer(),
-                        Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Text(
-                                "Step 3: Terms & Agreement",
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Review and submit your application",
-                                style: TextStyle(fontSize: 16, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 16),
-                          const Text("Terms & Conditions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          Expanded(
-                            child: SingleChildScrollView(
-                              child: const Text(
-                                "1. Your shop information must be accurate.\n"
-                                    "2. You agree to comply with our platform rules.\n"
-                                    "3. Submitting false information may result in rejection.\n"
-                                    "4. By submitting, you consent to our terms of service.\n",
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: agreed,
-                                onChanged: (val) {
-                                  setState(() => agreed = val ?? false);
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    AppRoutes.shopRegisterStep2, // Updated Route Name
+                                    arguments: widget.data,
+                                  );
                                 },
                               ),
-                              const Expanded(
-                                child: Text("I agree to the terms and conditions", style: TextStyle(fontSize: 16)),
-                              ),
-                            ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.article_rounded,
+                            size: 40,
+                            color: Colors.white,
                           ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed: agreed && !isLoading ? submitApplication : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black87,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                              ),
-                              child: isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
-                                  : const Text("Submit Application", style: TextStyle(color: Colors.white, fontSize: 16)),
+                          SizedBox(height: 16),
+                          Text(
+                            'Step 3',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                          Text(
+                            'Terms & Confirm',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 1,
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const StepTrackerBar(
+                              currentStep: 3, 
+                              totalSteps: 3,
+                              stepLabels: ['Personal', 'Shop Details', 'Terms'],
+                            ),
+                            const SizedBox(height: 24),
+
+                            const Text(
+                              "Terms and Agreement",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: primaryDeep,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Terms Box
+                            Container(
+                              height: 200,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const SingleChildScrollView(
+                                child: Text(
+                                  "1. Shop Ownership Verification: You must provide valid proof of shop ownership upon request.\n\n"
+                                  "2. Service Standards: You agree to maintain high service quality for Dobi users and adhere to platform pricing guidelines.\n\n"
+                                  "3. Payments: Dobi takes a commission on orders processed through the platform. Payouts are processed weekly.\n\n"
+                                  "4. Liability: You are responsible for the items in your care. Any damage or loss must be compensated as per the refund policy.\n\n"
+                                  "5. Termination: Dobi reserves the right to suspend accounts that violate these terms or receive consistent complaints.",
+                                  style: TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Checkbox
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: isAgreed,
+                                  activeColor: primaryDeep,
+                                  onChanged: (val) {
+                                    setState(() => isAgreed = val ?? false);
+                                  },
+                                ),
+                                const Expanded(
+                                  child: Text(
+                                    "I agree to the Terms & Conditions",
+                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const Spacer(),
+
+                            // SUBMIT BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton(
+                                onPressed: (isAgreed && !isSubmitting) ? _submitRegistration : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryDeep,
+                                  foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  elevation: 8,
+                                  shadowColor: primaryDeep.withOpacity(0.4),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                                child: isSubmitting
+                                    ? const SizedBox(
+                                        height: 24,
+                                        width: 24,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white, strokeWidth: 2.5),
+                                      )
+                                    : const Text(
+                                        'REGISTER SHOP',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 1.5,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _submitRegistration() async {
+    setState(() => isSubmitting = true);
+    final dbService = DatabaseService();
+
+    try {
+      // 1. Create Auth User
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: widget.data.email!,
+        password: widget.data.password!,
+      );
+
+      // 2. Save additional data to Firestore
+      String uid = userCredential.user!.uid;
+      // Fixed: changed createShopOwner to registerShopOwner as defined in DatabaseService
+      await dbService.registerShopOwner(widget.data); // Corrected Method Call
+
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Shop Owner Registration Complete!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to Home or Login
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.login,
+        (route) => false,
+      );
+
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message ?? "Registration Failed"), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => isSubmitting = false);
+    }
   }
 }

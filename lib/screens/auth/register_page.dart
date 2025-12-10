@@ -6,133 +6,198 @@ class RegisterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    // Using simple size to avoid complex rebuilds
+    final size = MediaQuery.of(context).size;
+
+    // Premium Color Palette
+    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
+    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    const Color accentColor = Color(0xFF5C6BC0);
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // TOP GRADIENT LIKE FORGOT PASSWORD PAGE
+          // 1. BACKGROUND GRADIENT
           Container(
+            height: size.height * 0.45,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF6A85B6), // Soft blue
-                  Color(0xFFBAC8E0), // Lighter blue
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+                colors: [primaryDeep, primaryLight],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 100,
+            left: -30,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
               ),
             ),
           ),
 
+          // 2. SCROLLABLE CONTENT
           SingleChildScrollView(
-            child: Column(
-              children: [
-                // HEADER SECTION
-                Container(
-                  height: screenHeight * 0.25,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        backgroundColor: Colors.white.withOpacity(0.8),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.black87, size: 26),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.login);
-                          },
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-
-                      const Spacer(),
-
-                      // Logo Text (unchanged)
-                      Center(
-                        child: Text(
-                          'DOBBIE',
-                          style: TextStyle(
-                            fontSize: 50,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.2),
-                                blurRadius: 8,
-                                offset: const Offset(2, 3),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // WHITE CURVED FORM SECTION
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.94),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
                     ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 16),
-                      Text(
-                        "Choose registration type",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey.shade800,
+                    
+                    const Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                              Icons.local_shipping_rounded,
+                              size: 40,
+                              color: Colors.white,
+                            ),
+                          SizedBox(height: 8),
+                          Text(
+                            'DOBBIE',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(40),
+                            topRight: Radius.circular(40),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(28, 40, 28, 30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Let's Get Started",
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey.shade900,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Choose your account type below",
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // USER CARD
+                            _buildCard(
+                              icon: Icons.person_outline_rounded,
+                              title: "User",
+                              subtitle: "I want to request deliveries",
+                              color: Colors.blue.shade50,
+                              iconColor: Colors.blue.shade700,
+                              onTap: () {
+                                Navigator.pushNamed(context, AppRoutes.userRegisterStep1);
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // DRIVER CARD
+                            _buildCard(
+                              icon: Icons.local_shipping_outlined,
+                              title: "Driver",
+                              subtitle: "I want to deliver packages",
+                              color: Colors.blue.shade50,
+                              iconColor: Colors.blue.shade700,
+                              onTap: () {
+                                Navigator.pushNamed(context, AppRoutes.driverRegisterStep1);
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            // SHOP OWNER CARD
+                            _buildCard(
+                              icon: Icons.storefront_outlined,
+                              title: "Shop Owner",
+                              subtitle: "I want to sell my products",
+                              color: Colors.blue.shade50,
+                              iconColor: Colors.blue.shade700,
+                              onTap: () {
+                                Navigator.pushNamed(context, AppRoutes.shopRegisterStep1);
+                              },
+                            ),
+                            
+                            const SizedBox(height: 30),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 25),
-
-                      // USER CARD
-                      _buildCard(
-                        icon: Icons.person,
-                        title: "Register as User",
-                        subtitle: "Create a normal user account to request deliveries.",
-                        onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.userRegisterStep1);
-                        },
-                      ),
-                      const SizedBox(height: 25),
-
-                      // DRIVER CARD
-                      _buildCard(
-                        icon: Icons.local_shipping,
-                        title: "Register as Driver",
-                        subtitle: "Become a delivery driver and start earning.",
-                        onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.driverRegisterStep1);
-                        },
-                      ),
-                      const SizedBox(height: 25),
-
-                      // SHOP OWNER CARD
-                      _buildCard(
-                        icon: Icons.storefront,
-                        title: "Register as Shop Owner",
-                        subtitle: "Create an account to sell your products on the platform.",
-                        onTap: () {
-                          Navigator.pushNamed(context, AppRoutes.shopOwnerStep1);
-                        },
-                      ),
-                      const SizedBox(height: 30), // extra spacing at bottom
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
@@ -141,46 +206,65 @@ class RegisterPage extends StatelessWidget {
   }
 
   // -----------------------------
-  // CARD WIDGET MATCHING FORGOT PASSWORD STYLE
+  // PREMIUM CARD WIDGET
   // -----------------------------
   Widget _buildCard({
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color color,
+    required Color iconColor,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Card(
-        color: Colors.grey.shade100, // lighter grey like Forgot Password inputs
-        elevation: 5,
-        shadowColor: Colors.black26,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-          width: double.infinity,
-          child: Column(
-            children: [
-              Icon(icon, size: 48, color: Colors.indigo.shade700),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey.shade800,
-                ),
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: Colors.black54),
+              child: Icon(icon, size: 30, color: iconColor),
+            ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueGrey.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 18, color: Colors.grey.shade400),
+          ],
         ),
       ),
     );

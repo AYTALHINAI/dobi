@@ -1,109 +1,97 @@
 import 'package:flutter/material.dart';
 
-class StepTrackerBar extends StatefulWidget {
+class StepTrackerBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
+  final List<String> stepLabels;
 
   const StepTrackerBar({
     super.key,
     required this.currentStep,
     required this.totalSteps,
+    required this.stepLabels,
   });
 
   @override
-  State<StepTrackerBar> createState() => _StepTrackerBarState();
-}
-
-class _StepTrackerBarState extends State<StepTrackerBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..repeat(reverse: true); // pulse animation for current step
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 50,
+    const activeColor = Color(0xFF1A237E); // Deep Indigo
+    // ignore: unused_local_variable
+    const inactiveColor = Color(0xFFE0E0E0);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
       child: Row(
-        children: List.generate(widget.totalSteps * 2 - 1, (index) {
+        children: List.generate(totalSteps * 2 - 1, (index) {
           if (index.isEven) {
-            // Step circle
+            // STEP CIRCLE
             int stepIndex = index ~/ 2;
-            bool isActive = stepIndex == widget.currentStep - 1;
-            bool isCompleted = stepIndex < widget.currentStep - 1;
+            int stepNumber = stepIndex + 1;
+            bool isActive = stepNumber == currentStep;
+            bool isCompleted = stepNumber < currentStep;
 
             return Expanded(
-              child: Center(
-                child: AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    double scale = isActive ? 1 + 0.1 * _controller.value : 1;
-                    return Transform.scale(
-                      scale: scale,
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: isCompleted
-                              ? Colors.green
-                              : isActive
-                              ? Colors.indigo.shade700
-                              : Colors.grey.shade300,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            if (isCompleted || isActive)
-                              BoxShadow(
-                                color: (isCompleted
-                                    ? Colors.green
-                                    : Colors.black87)
-                                    .withOpacity(0.4),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            '${stepIndex + 1}',
-                            style: TextStyle(
-                              color: isCompleted || isActive
-                                  ? Colors.white
-                                  : Colors.black54,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: isActive ? 40 : 32,
+                    height: isActive ? 40 : 32,
+                    decoration: BoxDecoration(
+                      color: isCompleted || isActive ? activeColor : Colors.white,
+                      border: Border.all(
+                        color: isCompleted || isActive ? activeColor : Colors.grey.shade400,
+                        width: 2,
                       ),
-                    );
-                  },
-                ),
+                      shape: BoxShape.circle,
+                      boxShadow: isActive
+                          ? [
+                              BoxShadow(
+                                color: activeColor.withOpacity(0.4),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              )
+                            ]
+                          : [],
+                    ),
+                    child: Center(
+                      child: isCompleted
+                          ? const Icon(Icons.check, color: Colors.white, size: 18)
+                          : Text(
+                              '$stepNumber',
+                              style: TextStyle(
+                                color: isActive ? Colors.white : Colors.grey.shade600,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isActive ? 16 : 14,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    stepIndex < stepLabels.length ? stepLabels[stepIndex] : '',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                      color: isActive ? activeColor : Colors.grey.shade600,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
               ),
             );
           } else {
-            // Connecting line
-            int leftStep = index ~/ 2;
-            bool isActive = leftStep < widget.currentStep - 1;
+            // CONNECTING LINE
+            int stepIndex = (index - 1) ~/ 2;
+            bool isLineActive = stepIndex + 1 < currentStep;
+
             return Expanded(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 500),
-                height: 4,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 24), // Increased to align with larger circles + labels
+                height: 3,
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.green : Colors.grey.shade300,
+                  color: isLineActive ? activeColor : Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

@@ -36,128 +36,206 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
+    // Using simple size to avoid complex rebuilds
+    final size = MediaQuery.of(context).size;
 
+    // Premium Color Palette
+    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
+    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // GRADIENT TOP SECTION
+          // 1. BACKGROUND GRADIENT
           Container(
+            height: size.height * 0.45,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [
-                  Color(0xFF6A85B6),
-                  Color(0xFFBAC8E0),
-                ],
+                colors: [primaryDeep, primaryLight],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(40),
+                bottomRight: Radius.circular(40),
+              ),
+            ),
+          ),
+          
+          // Decorative Circles
+          Positioned(
+            top: -50,
+            right: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
               ),
             ),
           ),
 
+          // 2. SCROLLABLE CONTENT
           SingleChildScrollView(
-            child: SizedBox(
-              height: screenHeight,
-              child: Column(
-                children: [
-                  // TOP HEADER SECTION WITH BACK ICON
-                  Container(
-                    height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CircleAvatar(
-                          radius: 26,
-                          backgroundColor: Colors.white.withOpacity(0.8),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.black87, size: 26),
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                          ),
-                        ),
-                        const Spacer(),
-                        const Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                "Step 2: Location Information",
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Next: Confirm Information",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // WHITE CURVED FORM SECTION
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.94),
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(30),
-                          topRight: Radius.circular(30),
-                        ),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: size.height),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
                           children: [
-                            const SizedBox(height: 16),
-                            StepTrackerBar(currentStep: 2, totalSteps: 3),
-                            const SizedBox(height: 24),
-                            _buildTextField(addressController, "Address (Optional)"),
-                            const SizedBox(height: 16),
-                            _buildTextField(cityController, "City (Optional)"),
-                            const SizedBox(height: 16),
-                            _buildTextField(postalCodeController, "Postal Code (Optional)"),
-                            const SizedBox(height: 30),
-                            // ONLY NEXT BUTTON
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.white.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
                                 onPressed: () {
-                                  widget.data.address = addressController.text;
-                                  widget.data.city = cityController.text;
-                                  widget.data.postalCode = postalCodeController.text;
-                                  Navigator.pushNamed(
-                                    context,
-                                    AppRoutes.userRegisterStep3,
-                                    arguments: widget.data,
-                                  );
+                                  FocusScope.of(context).unfocus();
+                                  Navigator.pop(context);
                                 },
-                                style: _btnStyle(Colors.indigo.shade700),
-                                child: const Text("Next",
-                                    style: TextStyle(color: Colors.white, fontSize: 16)),
                               ),
                             ),
-                            const SizedBox(height: 20),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
+
+                    const Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.location_on_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'Step 2',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                            ),
+                          ),
+                           SizedBox(height: 4),
+                          Text(
+                            'Location Info',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white70,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // WHITE CARD CONTENT
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: const Offset(0, -5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const StepTrackerBar(
+                                currentStep: 2, 
+                                totalSteps: 3,
+                                stepLabels: ['Personal', 'Address', 'Confirm'],
+                              ),
+                              const SizedBox(height: 24),
+
+                              _buildTextField(
+                                addressController, 
+                                "Address (Optional)", 
+                                Icons.home_filled
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildTextField(
+                                cityController, 
+                                "City (Optional)",
+                                Icons.location_city_rounded
+                              ),
+                              const SizedBox(height: 16),
+
+                              _buildTextField(
+                                postalCodeController, 
+                                "Postal Code (Optional)",
+                                Icons.markunread_mailbox_rounded,
+                                keyboardType: TextInputType.number
+                              ),
+
+                              const SizedBox(height: 35),
+
+                              // NEXT BUTTON
+                              SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    widget.data.address = addressController.text.trim();
+                                    widget.data.city = cityController.text.trim();
+                                    widget.data.postalCode = postalCodeController.text.trim();
+                                    
+                                    Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.userRegisterStep3,
+                                      arguments: widget.data,
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryDeep,
+                                    foregroundColor: Colors.white,
+                                    elevation: 8,
+                                    shadowColor: primaryDeep.withOpacity(0.4),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'REVIEW & SUBMIT',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -166,39 +244,38 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
     );
   }
 
-  // INPUT FIELD MATCHING STEP 1 STYLE
-  Widget _buildTextField(TextEditingController controller, String label,
-      {TextInputType? keyboardType}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    TextInputType? keyboardType,
+  }) {
+    const primaryDeep = Color(0xFF1A237E);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      style: const TextStyle(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: const Color(0xFF5C6BC0)),
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.grey.shade600),
         filled: true,
-        fillColor: Colors.grey.shade100,
-        hintText: label,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(color: Colors.indigo.shade400, width: 2),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: primaryDeep, width: 1.5),
         ),
       ),
-    );
-  }
-
-  // BUTTON STYLE MATCHING STEP 1
-  ButtonStyle _btnStyle(Color color) {
-    return ElevatedButton.styleFrom(
-      backgroundColor: color,
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
     );
   }
 }

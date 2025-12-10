@@ -230,6 +230,45 @@ class DatabaseService {
   }
 
   /// ------------------------------------------------
+  /// CHECK IF EMAIL EXISTS IN FIREBASE
+  /// ------------------------------------------------
+  /// Checks if email exists in users, drivers, or shopOwners collections
+  Future<bool> checkEmailExists(String email) async {
+    try {
+      final normalizedEmail = email.trim().toLowerCase();
+
+      // Check in users collection
+      final usersQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+      if (usersQuery.docs.isNotEmpty) return true;
+
+      // Check in drivers collection
+      final driversQuery = await _firestore
+          .collection('drivers')
+          .where('email', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+      if (driversQuery.docs.isNotEmpty) return true;
+
+      // Check in shopOwners collection
+      final shopOwnersQuery = await _firestore
+          .collection('shopOwners')
+          .where('email', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+      if (shopOwnersQuery.docs.isNotEmpty) return true;
+
+      return false;
+    } catch (e) {
+      // If there's an error, we return false to be safe
+      return false;
+    }
+  }
+
+  /// ------------------------------------------------
   /// GET SHOP OWNER STATUS (for login handling)
   /// ------------------------------------------------
   /// Get shop owner status by email
