@@ -6,33 +6,65 @@ class RegisterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      body: Container(
-        color: Colors.grey.shade300.withOpacity(0.9),
-        child: SafeArea(
-          child: SingleChildScrollView(
+      body: Stack(
+        children: [
+          // TOP GRADIENT LIKE FORGOT PASSWORD PAGE
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF6A85B6), // Soft blue
+                  Color(0xFFBAC8E0), // Lighter blue
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          SingleChildScrollView(
             child: Column(
               children: [
-                // TOP SECTION ----------------------------------------------------
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                // HEADER SECTION
+                Container(
+                  height: screenHeight * 0.25,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                        onPressed: () {
-                          Navigator.pushReplacementNamed(context, AppRoutes.login);
-                        },
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.white.withOpacity(0.8),
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back,
+                              color: Colors.black87, size: 26),
+                          onPressed: () {
+                            Navigator.pushReplacementNamed(context, AppRoutes.login);
+                          },
+                        ),
                       ),
-                      const SizedBox(height: 20),
+
+                      const Spacer(),
+
+                      // Logo Text (unchanged)
                       Center(
                         child: Text(
-                          'Dobi Logo',
-                          style: const TextStyle(
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                          'DOBBIE',
+                          style: TextStyle(
+                            fontSize: 50,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 2,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(2, 3),
+                              )
+                            ],
                           ),
                         ),
                       ),
@@ -40,12 +72,12 @@ class RegisterPage extends StatelessWidget {
                   ),
                 ),
 
-                // MAIN CONTAINER -------------------------------------------------
+                // WHITE CURVED FORM SECTION
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
+                    color: Colors.white.withOpacity(0.94),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
@@ -60,12 +92,12 @@ class RegisterPage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                          color: Colors.blueGrey.shade800,
                         ),
                       ),
                       const SizedBox(height: 25),
 
-                      // USER CARD -------------------------------------------------
+                      // USER CARD
                       _buildCard(
                         icon: Icons.person,
                         title: "Register as User",
@@ -74,10 +106,9 @@ class RegisterPage extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.userRegisterStep1);
                         },
                       ),
-
                       const SizedBox(height: 25),
 
-                      // DRIVER CARD -----------------------------------------------
+                      // DRIVER CARD
                       _buildCard(
                         icon: Icons.local_shipping,
                         title: "Register as Driver",
@@ -86,10 +117,9 @@ class RegisterPage extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.driverRegisterStep1);
                         },
                       ),
-
                       const SizedBox(height: 25),
 
-                      // SHOP OWNER CARD -------------------------------------------
+                      // SHOP OWNER CARD
                       _buildCard(
                         icon: Icons.storefront,
                         title: "Register as Shop Owner",
@@ -98,19 +128,20 @@ class RegisterPage extends StatelessWidget {
                           Navigator.pushNamed(context, AppRoutes.shopOwnerStep1);
                         },
                       ),
+                      const SizedBox(height: 30), // extra spacing at bottom
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   // -----------------------------
-  // CARD WIDGET (clean reusable)
+  // CARD WIDGET MATCHING FORGOT PASSWORD STYLE
   // -----------------------------
   Widget _buildCard({
     required IconData icon,
@@ -121,25 +152,25 @@ class RegisterPage extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        color: Colors.grey.shade200,
-        elevation: 4,
+        color: Colors.grey.shade100, // lighter grey like Forgot Password inputs
+        elevation: 5,
         shadowColor: Colors.black26,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
           width: double.infinity,
           child: Column(
             children: [
-              Icon(icon, size: 48, color: Colors.black87),
+              Icon(icon, size: 48, color: Colors.indigo.shade700),
               const SizedBox(height: 12),
               Text(
                 title,
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                  color: Colors.blueGrey.shade800,
                 ),
               ),
               const SizedBox(height: 6),

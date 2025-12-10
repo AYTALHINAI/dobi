@@ -54,13 +54,13 @@ class _StepTrackerBarState extends State<StepTrackerBar>
                     return Transform.scale(
                       scale: scale,
                       child: Container(
-                        width: 44,
-                        height: 44,
+                        width: 64,
+                        height: 64,
                         decoration: BoxDecoration(
                           color: isCompleted
                               ? Colors.green
                               : isActive
-                              ? Colors.black87
+                              ? Colors.indigo.shade700
                               : Colors.grey.shade300,
                           shape: BoxShape.circle,
                           boxShadow: [

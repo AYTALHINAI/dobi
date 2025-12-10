@@ -105,7 +105,34 @@ class _ShopOwnerStep2ShopInfoState extends State<ShopOwnerStep2ShopInfo> {
                             const SizedBox(height: 16),
 
                             _buildField(shopAddressController, "Shop Address"),
-                            const SizedBox(height: 30),
+                            // Info box for shop address
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              margin: const EdgeInsets.only(top: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Shop address format:",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text("• City, Area, Postal Code (postal code optional)", style: TextStyle(fontSize: 13)),
+                                  Text("• Example: Muscat, Seeb, 112", style: TextStyle(fontSize: 13)),
+                                  Text("• First two parts are required", style: TextStyle(fontSize: 13)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
 
                             SizedBox(
                               width: double.infinity,
@@ -164,6 +191,15 @@ class _ShopOwnerStep2ShopInfoState extends State<ShopOwnerStep2ShopInfo> {
       ),
       validator: (v) {
         if (v == null || v.isEmpty) return "Enter $label";
+
+        if (label == "Shop Address") {
+          // Must match "City, Area" and optionally ", PostalCode"
+          final addressRegex = RegExp(r'^[^,]+,\s*[^,]+(,\s*\d+)?$');
+          if (!addressRegex.hasMatch(v.trim())) {
+            return "Enter address like: City, Area, 112 (postal code optional)";
+          }
+        }
+
         return null;
       },
     );

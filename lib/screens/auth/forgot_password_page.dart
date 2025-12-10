@@ -33,7 +33,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     setState(() => isLoading = true);
 
     try {
-      String result = await dbService.sendPasswordResetEmail(emailController.text.trim());
+      String result =
+      await dbService.sendPasswordResetEmail(emailController.text.trim());
       showNotification(result, color: Colors.green);
       Navigator.pushReplacementNamed(context, AppRoutes.login);
     } catch (e) {
@@ -50,9 +51,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // Optional grey background
+          // SAME GRADIENT AS LOGIN PAGE
           Container(
-            color: Colors.grey.shade300.withOpacity(0.9),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF6A85B6), // Soft blue
+                  Color(0xFFBAC8E0), // Lighter blue
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
           ),
 
           SingleChildScrollView(
@@ -60,32 +70,46 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               height: screenHeight,
               child: Column(
                 children: [
-                  // Top Logo with Back Button
-                  // Top Logo Placeholder with back button
+                  // Top header identical to login page style
                   Container(
                     height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Back arrow at top left
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                          onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.login);
-                          },
+                        // Back Button
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Colors.white.withOpacity(0.8),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.black87, size: 26),
+                            onPressed: () {
+                              Navigator.pushReplacementNamed(
+                                  context, AppRoutes.login);
+                            },
+                          ),
                         ),
 
                         const Spacer(),
 
-                        // Logo centered horizontally
+                        // SAME DOBBIE STYLE AS LOGIN PAGE
                         Center(
-                          child: const Text(
-                            'Dobi Logo',
+                          child: Text(
+                            'DOBBIE',
                             style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
+                              fontSize: 50,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 2,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(2, 3),
+                                )
+                              ],
                             ),
                           ),
                         ),
@@ -93,13 +117,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ),
 
-                  // Form container
+                  // Bottom white curved section (unchanged)
                   Expanded(
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withOpacity(0.94),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(30),
                           topRight: Radius.circular(30),
@@ -110,7 +135,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.max,
                           children: [
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 22),
+
                             Align(
                               alignment: Alignment.topLeft,
                               child: Text(
@@ -118,66 +144,95 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
+                                  color: Colors.blueGrey.shade800,
                                 ),
                               ),
                             ),
+
                             const SizedBox(height: 34),
 
-                            // Email Field
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                prefixIcon: Icon(Icons.email, color: Colors.grey.shade700),
+                                prefixIcon: Icon(Icons.email,
+                                    color: Colors.indigo.shade400),
                                 hintText: 'Enter your email',
-                                filled: true,
-                                fillColor: Colors.grey.shade200,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                  borderSide: BorderSide.none,
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade600,
                                 ),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                filled: true,
+                                fillColor: Colors.grey.shade100,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide(color: Colors.indigo.shade100),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(18),
+                                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return "Please enter your email.";
                                 }
-                                final validEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim());
-                                if (!validEmail) return "Please enter a valid email address.";
+                                final validEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+')
+                                    .hasMatch(value.trim());
+                                if (!validEmail) {
+                                  return "Please enter a valid email address.";
+                                }
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 35),
 
-                            // Send Reset Link Button
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: isLoading ? null : sendResetLink,
                                 style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(15),
                                   ),
-                                  backgroundColor: Colors.black87,
-                                  textStyle: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                  backgroundColor: Colors.indigo.shade700,
                                 ),
                                 child: isLoading
-                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    ? const CircularProgressIndicator(
+                                    color: Colors.white)
                                     : const Text(
                                   'Send Reset Link',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
                                 ),
                               ),
                             ),
+
                             const SizedBox(height: 24),
 
-                            // Back to Login (centered)
+                            // TextButton(
+                            //   onPressed: () {
+                            //     Navigator.pushReplacementNamed(
+                            //         context, AppRoutes.login);
+                            //   },
+                            //   child: Text(
+                            //     "Back to Login",
+                            //     style: TextStyle(
+                            //       fontSize: 16,
+                            //       color: Colors.indigo.shade700,
+                            //       fontWeight: FontWeight.w600,
+                            //     ),
+                            //   ),
+                            // ),
 
+                            const SizedBox(height: 20),
                           ],
                         ),
                       ),

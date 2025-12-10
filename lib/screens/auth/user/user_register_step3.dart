@@ -21,36 +21,56 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
     return Scaffold(
       body: Stack(
         children: [
-          Container(color: Colors.grey.shade300.withOpacity(0.9)),
+          // Gradient top section like Step 1 & 2
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF6A85B6),
+                  Color(0xFFBAC8E0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
           SingleChildScrollView(
             child: SizedBox(
               height: screenHeight,
               child: Column(
                 children: [
-                  // Top section with back button & step info
+                  // Top header section with back icon
                   Container(
                     height: screenHeight * 0.25,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 47),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 30),
-                          onPressed: () => Navigator.pop(context),
+                        CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Colors.white.withOpacity(0.8),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.black87, size: 26),
+                            onPressed: () => Navigator.pop(context),
+                          ),
                         ),
                         const Spacer(),
-                        Center(
+                        const Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Text(
                                 "Step 3: Confirm Information",
-                                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
+                                style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                               SizedBox(height: 8),
                               Text(
                                 "Submit to complete registration",
-                                style: TextStyle(fontSize: 16, color: Colors.black54),
+                                style: TextStyle(fontSize: 16, color: Colors.white),
                               ),
                             ],
                           ),
@@ -59,13 +79,13 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
                     ),
                   ),
 
-                  // Form container (no validation required for optional fields)
+                  // White curved form/info container
                   Expanded(
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        color: Colors.white.withOpacity(0.94),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(30),
                           topRight: Radius.circular(30),
@@ -89,51 +109,44 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
                           _buildInfoRow("City", widget.data.city),
                           _buildInfoRow("Postal Code", widget.data.postalCode),
                           const SizedBox(height: 30),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: _btnStyle(Colors.grey.shade400),
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text("Back", style: TextStyle(fontSize: 16, color: Colors.white)),
-                                ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: _btnStyle(Colors.indigo.shade700),
+                              onPressed: () async {
+                                final dbService = DatabaseService();
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (context) =>
+                                  const Center(child: CircularProgressIndicator()),
+                                );
+
+                                String? error = await dbService.registerUser(widget.data);
+                                Navigator.pop(context);
+
+                                if (error != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("Error: $error")),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text("Registration Complete!")),
+                                  );
+
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context,
+                                    AppRoutes.userHome,
+                                        (route) => false,
+                                  );
+                                }
+                              },
+                              child: const Text(
+                                "Submit",
+                                style: TextStyle(color: Colors.white, fontSize: 16),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: ElevatedButton(
-                                  style: _btnStyle(Colors.black87),
-                                  onPressed: () async {
-                                    final dbService = DatabaseService();
-                                    showDialog(
-                                      context: context,
-                                      barrierDismissible: false,
-                                      builder: (context) => const Center(child: CircularProgressIndicator()),
-                                    );
-
-                                    // Register user - optional fields are allowed to be empty
-                                    String? error = await dbService.registerUser(widget.data);
-                                    Navigator.pop(context);
-
-                                    if (error != null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text("Error: $error")),
-                                      );
-                                    } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text("Registration Complete!")),
-                                      );
-
-                                      Navigator.pushNamedAndRemoveUntil(
-                                        context,
-                                        AppRoutes.userHome,
-                                            (route) => false,
-                                      );
-                                    }
-                                  },
-                                  child: const Text("Submit", style: TextStyle(fontSize: 16, color: Colors.white)),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
@@ -153,9 +166,12 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+          Text("$label: ",
+              style:
+              const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
           Expanded(
-            child: Text(value.isEmpty ? "-" : value, style: const TextStyle(color: Colors.black)),
+            child: Text(value.isEmpty ? "-" : value,
+                style: const TextStyle(color: Colors.black)),
           ),
         ],
       ),
@@ -165,7 +181,7 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
   ButtonStyle _btnStyle(Color color) {
     return ElevatedButton.styleFrom(
       backgroundColor: color,
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
     );
   }
