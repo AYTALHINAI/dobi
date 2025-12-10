@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import '../../database.dart';
+import '../../services/otp_service.dart';
 import '../../routes/app_routes.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
@@ -12,7 +12,7 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final TextEditingController emailController = TextEditingController();
-  final DatabaseService dbService = DatabaseService();
+  final OtpService otpService = OtpService();
   final _formKey = GlobalKey<FormState>();
   bool isLoading = false;
 
@@ -27,16 +27,25 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  Future<void> sendResetLink() async {
+  Future<void> sendOTP() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => isLoading = true);
 
     try {
-      String result =
-      await dbService.sendPasswordResetEmail(emailController.text.trim());
-      showNotification(result, color: Colors.green);
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
+      final email = emailController.text.trim();
+      final result = await otpService.sendOTP(email);
+
+      if (result['success'] == true) {
+        showNotification('OTP sent to $email', color: Colors.green);
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.otpVerification,
+          arguments: email,
+        );
+      } else {
+        showNotification(result['message'], color: Colors.red);
+      }
     } catch (e) {
       showNotification(e.toString(), color: Colors.red);
     } finally {
@@ -173,7 +182,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
-                                onPressed: isLoading ? null : sendResetLink,
+                                onPressed: isLoading ? null : sendOTP,
                                 style: ElevatedButton.styleFrom(
                                   padding:
                                   const EdgeInsets.symmetric(vertical: 16),
@@ -186,7 +195,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     ? const CircularProgressIndicator(
                                     color: Colors.white)
                                     : const Text(
-                                  'Send Reset Link',
+                                  'Send OTP',
                                   style: TextStyle(
                                       color: Colors.white, fontSize: 18),
                                 ),

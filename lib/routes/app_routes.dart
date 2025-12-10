@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../screens/auth/login_page.dart';
 import '../screens/auth/register_page.dart';
 import '../screens/auth/forgot_password_page.dart';
+import '../screens/auth/otp_verification_page.dart';
 
 // USER REGISTRATION STEPS
 import '../screens/auth/user/user_register_step1.dart';
@@ -42,6 +43,7 @@ class AppRoutes {
   static const String login = '/login';
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
+  static const String otpVerification = '/otp-verification';
 
   // USER REGISTRATION MULTI-STEP
   static const String userRegisterStep1 = '/register/user/step1';
@@ -79,6 +81,9 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => RegisterPage());
       case forgotPassword:
         return MaterialPageRoute(builder: (_) => ForgotPasswordPage());
+      case otpVerification:
+        final email = settings.arguments as String;
+        return MaterialPageRoute(builder: (_) => OtpVerificationPage(email: email));
 
     // USER REGISTRATION
       case userRegisterStep1:
