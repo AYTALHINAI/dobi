@@ -8,7 +8,23 @@ class LoginPage extends StatefulWidget {
 
   @override
   State<LoginPage> createState() => _LoginPageState();
+
+
 }
+// ------------------ Validators ------------------
+class LoginValidators {
+  static String? validateEmail(String? value) {
+    if (value == null || value.isEmpty) return "Enter your email";
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) return "Enter a valid email";
+    return null;
+  }
+
+  static String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) return "Enter your password";
+    return null;
+  }
+}
+// ---------------------------------------------------------------------------
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
@@ -29,6 +45,8 @@ class _LoginPageState extends State<LoginPage> {
       fontSize: 16.0,
     );
   }
+
+
 
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -73,6 +91,21 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => isLoading = false);
     }
   }
+
+
+
+//   // ------------------ Validators ------------------
+//   static String? validateEmail(String? value) {
+//     if (value == null || value.isEmpty) return "Enter your email";
+//     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) return "Enter a valid email";
+//     return null;
+//   }
+//
+//   static String? validatePassword(String? value) {
+//     if (value == null || value.isEmpty) return "Enter your password";
+//     return null;
+//   }
+// // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -164,10 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                             // ✨ Updated TextField Style
                             TextFormField(
                               controller: emailController,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) return "Enter your email";
-                                return null;
-                              },
+                              validator: LoginValidators.validateEmail,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.email, color: Colors.indigo.shade400),
                                 hintText: 'Email',
@@ -192,10 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                             TextFormField(
                               controller: passwordController,
                               obscureText: !showPassword,
-                              validator: (value) {
-                                if (value == null || value.isEmpty) return "Enter your password";
-                                return null;
-                              },
+                              validator: LoginValidators.validatePassword,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.lock, color: Colors.indigo.shade400),
                                 hintText: 'Password',

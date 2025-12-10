@@ -51,26 +51,23 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return Scaffold(
       body: Stack(
         children: [
-          // SAME GRADIENT AS LOGIN PAGE
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Color(0xFF6A85B6), // Soft blue
-                  Color(0xFFBAC8E0), // Lighter blue
+                  Color(0xFF6A85B6),
+                  Color(0xFFBAC8E0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
             ),
           ),
-
           SingleChildScrollView(
             child: SizedBox(
               height: screenHeight,
               child: Column(
                 children: [
-                  // Top header identical to login page style
                   Container(
                     height: screenHeight * 0.25,
                     padding:
@@ -78,7 +75,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Back Button
                         CircleAvatar(
                           radius: 26,
                           backgroundColor: Colors.white.withOpacity(0.8),
@@ -91,10 +87,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             },
                           ),
                         ),
-
                         const Spacer(),
-
-                        // SAME DOBBIE STYLE AS LOGIN PAGE
                         Center(
                           child: Text(
                             'DOBBIE',
@@ -116,13 +109,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ],
                     ),
                   ),
-
-                  // Bottom white curved section (unchanged)
                   Expanded(
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 28, vertical: 20),
+                      padding:
+                      const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.94),
                         borderRadius: const BorderRadius.only(
@@ -136,7 +127,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           mainAxisSize: MainAxisSize.max,
                           children: [
                             const SizedBox(height: 22),
-
                             Align(
                               alignment: Alignment.topLeft,
                               child: Text(
@@ -148,12 +138,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 34),
-
                             TextFormField(
                               controller: emailController,
                               keyboardType: TextInputType.emailAddress,
+                              validator: ForgotPasswordValidators.validateEmail,
                               decoration: InputDecoration(
                                 prefixIcon: Icon(Icons.email,
                                     color: Colors.indigo.shade400),
@@ -165,7 +154,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 fillColor: Colors.grey.shade100,
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide(color: Colors.indigo.shade100),
+                                  borderSide:
+                                  BorderSide(color: Colors.indigo.shade100),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(18),
@@ -173,25 +163,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(18),
-                                    borderSide: BorderSide(color: Colors.indigo.shade400, width: 2)),
+                                    borderSide: BorderSide(
+                                        color: Colors.indigo.shade400, width: 2)),
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 14),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return "Please enter your email.";
-                                }
-                                final validEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                    .hasMatch(value.trim());
-                                if (!validEmail) {
-                                  return "Please enter a valid email address.";
-                                }
-                                return null;
-                              },
                             ),
-
                             const SizedBox(height: 35),
-
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
@@ -214,24 +192,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 24),
-
-                            // TextButton(
-                            //   onPressed: () {
-                            //     Navigator.pushReplacementNamed(
-                            //         context, AppRoutes.login);
-                            //   },
-                            //   child: Text(
-                            //     "Back to Login",
-                            //     style: TextStyle(
-                            //       fontSize: 16,
-                            //       color: Colors.indigo.shade700,
-                            //       fontWeight: FontWeight.w600,
-                            //     ),
-                            //   ),
-                            // ),
-
                             const SizedBox(height: 20),
                           ],
                         ),
@@ -245,5 +206,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         ],
       ),
     );
+  }
+}
+
+// ------------------ Static Validators Class ------------------
+class ForgotPasswordValidators {
+  static String? validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return "Please enter your email.";
+    }
+    final validEmail = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim());
+    if (!validEmail) {
+      return "Please enter a valid email address.";
+    }
+    return null;
   }
 }
