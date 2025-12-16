@@ -175,9 +175,9 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
                               "Location Information",
                               Icons.location_on,
                               [
+                                _buildInfoRow("Governorate", widget.data.governorate),
+                                _buildInfoRow("Wilayat", widget.data.wilayat),
                                 _buildInfoRow("Address", widget.data.address),
-                                _buildInfoRow("City", widget.data.city),
-                                _buildInfoRow("Postal Code", widget.data.postalCode),
                               ],
                             ),
 

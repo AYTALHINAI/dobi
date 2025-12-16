@@ -13,21 +13,35 @@ class DriverStep2Vehicle extends StatefulWidget {
 
 class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController vehicleTypeController;
   late TextEditingController plateNumberController;
   late TextEditingController licenseNumberController;
+  
+  // Vehicle Type dropdown
+  String? _selectedVehicleType;
+  
+  static const List<String> vehicleTypes = [
+    'Sedan',
+    'Hatchback',
+    'SUV Models',
+    'Pickup Models',
+    'Van Models',
+  ];
 
   @override
   void initState() {
     super.initState();
-    vehicleTypeController = TextEditingController(text: widget.data.vehicleType);
     plateNumberController = TextEditingController(text: widget.data.plateNumber);
     licenseNumberController = TextEditingController(text: widget.data.licenseNumber);
+    
+    // Initialize from existing data if available
+    if (widget.data.vehicleType.isNotEmpty && 
+        vehicleTypes.contains(widget.data.vehicleType)) {
+      _selectedVehicleType = widget.data.vehicleType;
+    }
   }
 
   @override
   void dispose() {
-    vehicleTypeController.dispose();
     plateNumberController.dispose();
     licenseNumberController.dispose();
     super.dispose();
@@ -166,17 +180,25 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                               const StepTrackerBar(
                                 currentStep: 2, 
                                 totalSteps: 3,
-                                stepLabels: ['Personal', 'Vehicle', 'License'],
+                                stepLabels: ['Personal', 'Vehicle', 'Terms'],
                               ),
                               const SizedBox(height: 24),
 
-                              _buildTextField(
-                                vehicleTypeController,
-                                "Vehicle Type",
-                                Icons.directions_car,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return "Enter Vehicle Type";
-                                  if (v.trim().length < 4) return "Vehicle Type must be at least 4 characters";
+                              // Vehicle Type Dropdown
+                              _buildDropdownField(
+                                value: _selectedVehicleType,
+                                hint: "Select Vehicle Type",
+                                icon: Icons.directions_car,
+                                items: vehicleTypes,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedVehicleType = value;
+                                  });
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return "Please select a vehicle type";
+                                  }
                                   return null;
                                 },
                               ),
@@ -220,8 +242,8 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                 height: 55,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    if (_formKey.currentState!.validate()) {
-                                      widget.data.vehicleType = vehicleTypeController.text.trim();
+                                    if (_formKey.currentState!.validate() && _selectedVehicleType != null) {
+                                      widget.data.vehicleType = _selectedVehicleType!;
                                       widget.data.plateNumber = plateNumberController.text.trim();
                                       widget.data.licenseNumber = licenseNumberController.text.trim();
 
@@ -229,6 +251,13 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                         context,
                                         AppRoutes.driverRegisterStep3,
                                         arguments: widget.data,
+                                      );
+                                    } else if (_selectedVehicleType == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Please select a vehicle type"),
+                                          backgroundColor: Colors.red,
+                                        ),
                                       );
                                     }
                                   },
@@ -242,7 +271,7 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                     ),
                                   ),
                                   child: const Text(
-                                    'NEXT STEPS',
+                                    'NEXT STEP',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -263,6 +292,67 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String? value,
+    required String hint,
+    required IconData icon,
+    required List<String> items,
+    required void Function(String?)? onChanged,
+    String? Function(String?)? validator,
+  }) {
+    const primaryDeep = Color(0xFF1A237E);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        isExpanded: true,
+        validator: validator,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: const Color(0xFF5C6BC0)),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: primaryDeep, width: 1.5),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          ),
+        ),
+        hint: Text(
+          hint,
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: const TextStyle(
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
+        dropdownColor: Colors.white,
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: Colors.grey.shade600,
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: onChanged,
       ),
     );
   }
@@ -318,3 +408,4 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
     );
   }
 }
+

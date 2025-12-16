@@ -8,13 +8,13 @@ class DriverRegistrationData {
 
   // Step 2 – Vehicle Info
   String vehicleType = "";
-  String vehicleModel = "";
   String plateNumber = "";
 
   // Step 3 – License Info
   String licenseNumber = "";
-  String experienceYears = "";
-  String address = "";
+
+  // Terms Acceptance
+  bool termsAccepted = false;
 
   DriverRegistrationData();
 
@@ -25,11 +25,9 @@ class DriverRegistrationData {
       'phone': phone,
       'email': email,
       'vehicleType': vehicleType,
-      'vehicleModel': vehicleModel,
       'plateNumber': plateNumber,
       'licenseNumber': licenseNumber,
-      'experienceYears': experienceYears,
-      'address': address,
+      'termsAccepted': termsAccepted,
     };
   }
 
@@ -41,6 +39,8 @@ class DriverRegistrationData {
     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email)) return false;
     if (password.length < 6) return false;
     if (vehicleType.isEmpty || plateNumber.isEmpty || licenseNumber.isEmpty) return false;
+    if (!termsAccepted) return false;
     return true;
   }
 }
+

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../routes/app_routes.dart';
 import '../../../../database.dart';
 import '../../widgets/step_tracker_bar.dart';
-import 'shop_owner_registration_model.dart'; // Corrected Import
-import 'package:firebase_auth/firebase_auth.dart';
+import 'shop_owner_registration_model.dart';
 
 class ShopOwnerStep3Terms extends StatefulWidget {
   final ShopOwnerRegistrationData data;
@@ -163,7 +162,7 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                             
                             // Terms Box
                             Container(
-                              height: 200,
+                              height: 250,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade50,
@@ -172,11 +171,71 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                               ),
                               child: const SingleChildScrollView(
                                 child: Text(
-                                  "1. Shop Ownership Verification: You must provide valid proof of shop ownership upon request.\n\n"
-                                  "2. Service Standards: You agree to maintain high service quality for Dobi users and adhere to platform pricing guidelines.\n\n"
-                                  "3. Payments: Dobi takes a commission on orders processed through the platform. Payouts are processed weekly.\n\n"
-                                  "4. Liability: You are responsible for the items in your care. Any damage or loss must be compensated as per the refund policy.\n\n"
-                                  "5. Termination: Dobi reserves the right to suspend accounts that violate these terms or receive consistent complaints.",
+                                  """SHOP OWNER TERMS & AGREEMENT
+
+Last updated: 16 December 2025
+
+By registering as a Shop Owner on this Platform (the "Platform"), you agree to the following Terms & Agreement. If you do not agree, you must not use the Platform.
+
+1. Role of the Platform
+
+1.1 The Platform is a technology intermediary that connects customers, shop owners, and drivers.
+
+1.2 The Platform does not own, manufacture, prepare, or sell any products listed by Shop Owners.
+
+2. Eligibility & Registration
+
+2.1 The Shop Owner confirms that they are legally permitted to operate a business in the Sultanate of Oman.
+
+2.2 Valid business documentation (including Commercial Registration or relevant license) must be provided upon request.
+
+2.3 The Shop Owner is responsible for maintaining accurate and up-to-date account information.
+
+3. Products & Compliance
+
+3.1 The Shop Owner is fully responsible for:
+
+Product quality and safety
+
+Accurate descriptions and pricing
+
+Compliance with health, safety, and consumer protection laws
+
+3.2 The Platform reserves the right to remove products or suspend listings that violate laws or Platform policies.
+
+4. Orders & Fulfillment
+
+4.1 The Shop Owner agrees to prepare and fulfill confirmed orders in a timely and professional manner.
+
+4.2 Repeated delays, cancellations, or incorrect orders may result in penalties, reduced visibility, or account suspension.
+
+4.3 The Platform is not responsible for losses resulting from the Shop Owner's failure to fulfill orders correctly.
+
+5. Payments, Fees & Taxes
+
+5.1 The Platform may charge service or commission fees, which will be communicated separately.
+
+5.2 Payouts will be made according to the Platform's payout schedule and provided bank details.
+
+5.3 The Shop Owner is solely responsible for all applicable taxes, VAT, and financial obligations.
+
+6. Suspension & Termination
+
+6.1 The Platform may suspend or terminate a Shop Owner account for violations of these Terms, applicable laws, or repeated customer complaints.
+
+6.2 Outstanding payments may be withheld during investigations or dispute resolution.
+
+7. Limitation of Liability
+
+7.1 The Platform is not liable for indirect, incidental, or consequential damages arising from the Shop Owner's use of the Platform.
+
+8. Governing Law
+
+8.1 These Terms are governed by the laws of the Sultanate of Oman.
+
+9. Acceptance
+
+By using the Platform, the Shop Owner confirms acceptance of these Terms & Agreement.""",
                                   style: TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
                                 ),
                               ),
@@ -258,38 +317,32 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
     final dbService = DatabaseService();
 
     try {
-      // 1. Create Auth User
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: widget.data.email!,
-        password: widget.data.password!,
-      );
-
-      // 2. Save additional data to Firestore
-      String uid = userCredential.user!.uid;
-      // Fixed: changed createShopOwner to registerShopOwner as defined in DatabaseService
-      await dbService.registerShopOwner(widget.data); // Corrected Method Call
+      // Use the DatabaseService to handle both Auth and Firestore
+      String? error = await dbService.registerShopOwner(widget.data);
 
       if (!mounted) return;
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Shop Owner Registration Complete!"),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: $error"), backgroundColor: Colors.red),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Shop Owner Registration Complete! Pending approval."),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-      // Navigate to Home or Login
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        AppRoutes.login,
-        (route) => false,
-      );
-
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message ?? "Registration Failed"), backgroundColor: Colors.red),
-      );
+        // Navigate to Login
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.login,
+          (route) => false,
+        );
+      }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );

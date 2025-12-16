@@ -16,7 +16,6 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
 
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
 
@@ -24,7 +23,6 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
   void dispose() {
     nameController.dispose();
     phoneController.dispose();
-    emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
     super.dispose();
@@ -175,14 +173,6 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                               const SizedBox(height: 16),
 
                               _buildTextField(
-                                emailController,
-                                "Email",
-                                Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
                                 passwordController,
                                 "Password",
                                 Icons.lock_outline,
@@ -239,7 +229,6 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                                     if (_formKey.currentState!.validate()) {
                                       data.ownerName = nameController.text.trim();
                                       data.phone = phoneController.text.trim();
-                                      data.email = emailController.text.trim();
                                       data.password = passwordController.text;
 
                                       Navigator.pushNamed(
@@ -326,9 +315,8 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
         }
 
         if (label == "Email") {
-          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
-            return "Enter a valid email";
-          }
+          // Email validation moved to Step 2
+          return null;
         }
 
         if (label == "Password") {

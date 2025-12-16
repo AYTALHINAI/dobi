@@ -6,8 +6,8 @@ class UserRegistrationData {
 
   // Optional
   String address;
-  String city;
-  String postalCode;
+  String governorate;
+  String wilayat;
 
   UserRegistrationData({
     this.fullName = "",
@@ -15,8 +15,8 @@ class UserRegistrationData {
     this.email = "",
     this.password = "",
     this.address = "",
-    this.city = "",
-    this.postalCode = "",
+    this.governorate = "",
+    this.wilayat = "",
   });
 
   bool isValid() {
@@ -32,8 +32,8 @@ class UserRegistrationData {
       "phone": phone,
       "email": email,
       "address": address,
-      "city": city,
-      "postalCode": postalCode,
+      "governorate": governorate,
+      "wilayat": wilayat,
     };
   }
 }

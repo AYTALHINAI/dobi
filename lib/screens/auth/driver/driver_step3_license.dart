@@ -13,7 +13,68 @@ class DriverStep3License extends StatefulWidget {
 }
 
 class _DriverStep3LicenseState extends State<DriverStep3License> {
+  bool isAgreed = false;
   bool isSubmitting = false;
+
+  static const String driverTermsText = '''DRIVER TERMS & AGREEMENT
+
+Last updated: 16 December 2025
+
+By registering as a Driver on this Platform (the "Platform"), you agree to the following Terms & Agreement. If you do not agree, you must not use the Platform.
+
+1. Driver Status
+
+1.1 Drivers operate as independent contractors, not employees, partners, or agents of the Platform.
+
+1.2 The Platform does not guarantee minimum earnings, delivery volume, or working hours.
+
+2. Eligibility & Documentation
+
+2.1 Drivers must be legally eligible to work in Oman.
+
+2.2 A valid driving license, vehicle registration, and insurance must be maintained at all times.
+
+2.3 Drivers are responsible for the accuracy of all submitted documents.
+
+3. Delivery Responsibilities
+
+3.1 Drivers agree to complete deliveries safely, professionally, and within reasonable timeframes.
+
+3.2 Orders must be handled with care and delivered according to instructions provided through the Platform.
+
+3.3 Drivers are responsible for any traffic violations, fines, or accidents occurring during deliveries.
+
+4. Payments & Expenses
+
+4.1 Driver earnings are calculated based on delivery distance, time, or other criteria defined by the Platform.
+
+4.2 Payments are made according to the Platform's payout schedule.
+
+4.3 Drivers are responsible for all personal expenses, including fuel, maintenance, insurance, and mobile data.
+
+5. Conduct & Performance
+
+5.1 Drivers must maintain respectful behavior toward customers, shop owners, and Platform staff.
+
+5.2 Fraud, misuse of the Platform, or repeated complaints may result in penalties or account suspension.
+
+6. Suspension & Termination
+
+6.1 The Platform may suspend or terminate Driver accounts for violations of these Terms or applicable laws.
+
+6.2 Payments may be withheld during investigations related to fraud or misconduct.
+
+7. Limitation of Liability
+
+7.1 The Platform is not liable for injuries, losses, or damages incurred during deliveries.
+
+8. Governing Law
+
+8.1 These Terms are governed by the laws of the Sultanate of Oman.
+
+9. Acceptance
+
+By using the Platform, the Driver confirms acceptance of these Terms & Agreement.''';
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +153,7 @@ class _DriverStep3LicenseState extends State<DriverStep3License> {
                       child: Column(
                         children: [
                           Icon(
-                            Icons.check_circle_outline_rounded,
+                            Icons.article_rounded,
                             size: 40,
                             color: Colors.white,
                           ),
@@ -108,7 +169,7 @@ class _DriverStep3LicenseState extends State<DriverStep3License> {
                           ),
                            SizedBox(height: 4),
                           Text(
-                            'Confirm & Register',
+                            'Terms & Confirm',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white70,
@@ -145,51 +206,70 @@ class _DriverStep3LicenseState extends State<DriverStep3License> {
                             const StepTrackerBar(
                               currentStep: 3, 
                               totalSteps: 3,
-                              stepLabels: ['Personal', 'Vehicle', 'License'],
+                              stepLabels: ['Personal', 'Vehicle', 'Terms'],
                             ),
                             const SizedBox(height: 24),
 
-                            Text(
-                              "Please review your information:",
+                            const Text(
+                              "Terms and Agreement",
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blueGrey.shade800,
+                                color: primaryDeep,
                               ),
                             ),
+                            const SizedBox(height: 16),
+                            
+                            // Terms Box
+                            Container(
+                              height: 250,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const SingleChildScrollView(
+                                child: Text(
+                                  driverTermsText,
+                                  style: TextStyle(fontSize: 14, height: 1.5, color: Colors.black87),
+                                ),
+                              ),
+                            ),
+
                             const SizedBox(height: 20),
 
-                            _buildInfoCard(
-                              "Personal Details",
-                              Icons.person,
-                              [
-                                _buildInfoRow("Full Name", widget.data.fullName),
-                                _buildInfoRow("Phone", widget.data.phone),
-                                _buildInfoRow("Email", widget.data.email),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            _buildInfoCard(
-                              "Vehicle Details",
-                              Icons.directions_car,
-                              [
-                                _buildInfoRow("Vehicle Type", widget.data.vehicleType),
-                                _buildInfoRow("Plate Number", widget.data.plateNumber),
-                                _buildInfoRow("License No.", widget.data.licenseNumber),
+                            // Checkbox
+                            Row(
+                              children: [
+                                Checkbox(
+                                  value: isAgreed,
+                                  activeColor: primaryDeep,
+                                  onChanged: (val) {
+                                    setState(() => isAgreed = val ?? false);
+                                  },
+                                ),
+                                const Expanded(
+                                  child: Text(
+                                    "I agree to the Terms & Conditions",
+                                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
                               ],
                             ),
 
-                            const SizedBox(height: 35),
+                            const Spacer(),
 
                             // SUBMIT BUTTON
                             SizedBox(
                               width: double.infinity,
                               height: 55,
                               child: ElevatedButton(
-                                onPressed: isSubmitting ? null : _submitRegistration,
+                                onPressed: (isAgreed && !isSubmitting) ? _submitRegistration : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primaryDeep,
                                   foregroundColor: Colors.white,
+                                  disabledBackgroundColor: Colors.grey.shade300,
                                   elevation: 8,
                                   shadowColor: primaryDeep.withOpacity(0.4),
                                   shape: RoundedRectangleBorder(
@@ -228,73 +308,12 @@ class _DriverStep3LicenseState extends State<DriverStep3License> {
     );
   }
 
-  Widget _buildInfoCard(String title, IconData icon, List<Widget> children) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 20, color: const Color(0xFF1A237E)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A237E),
-                ),
-              ),
-            ],
-          ),
-          const Divider(height: 24),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value.isEmpty ? "-" : value,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.blueGrey.shade900,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _submitRegistration() async {
     setState(() => isSubmitting = true);
+    
+    // Set terms accepted
+    widget.data.termsAccepted = true;
+    
     final dbService = DatabaseService();
 
     String? error = await dbService.registerDriver(widget.data);
@@ -322,3 +341,4 @@ class _DriverStep3LicenseState extends State<DriverStep3License> {
     }
   }
 }
+

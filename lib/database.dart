@@ -210,7 +210,7 @@ class DatabaseService {
         return "shopOwner";
       }
 
-      throw "Profile not found. Please contact support.";
+      throw "Login failed. Please try again.";
 
     } on FirebaseAuthException catch (e) {
       switch (e.code) {

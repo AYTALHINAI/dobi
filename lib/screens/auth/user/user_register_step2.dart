@@ -15,22 +15,51 @@ class UserRegisterStep2 extends StatefulWidget {
 class _UserRegisterStep2State extends State<UserRegisterStep2> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController addressController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
-  final TextEditingController postalCodeController = TextEditingController();
+
+  // Governorate and Wilayat data
+  String? _selectedGovernorate;
+  String? _selectedWilayat;
+
+  // Map of Governorates to their Wilayats
+  static const Map<String, List<String>> governorateWilayatMap = {
+    'Muscat': ['Muttrah', 'Bawshar', 'Seeb', 'Al Amerat', 'Qurayyat'],
+    'Dhofar': ['Salalah', 'Taqah', 'Mirbat', 'Thumrait', 'Sadah', 'Rakhyut', 'Dalkut', 'Muqshin'],
+    'Musandam': ['Khasab', 'Bukha', 'Dibba Al Baya', 'Madha'],
+    'Al Buraimi': ['Mahdah', 'Al Sinainah'],
+    'Al Dakhiliyah': ['Nizwa', 'Bahla', 'Adam', 'Izki', 'Samail', 'Bidbid', 'Manah'],
+    'Al Dhahirah': ['Ibri', 'Yanqul', 'Dhank'],
+    'North Al Batinah': ['Sohar', 'Shinas', 'Liwa', 'Saham', 'Al Khaburah', 'Suwaiq'],
+    'South Al Batinah': ['Rustaq', 'Nakhal', 'Wadi Al Maawil', 'Barka', 'Al Musannah'],
+    'North Al Sharqiyah': ['Ibra', 'Al Mudhaibi', 'Bidiyah', 'Qabil', 'Wadi Bani Khalid', 'Dema Wa Thaieen'],
+    'South Al Sharqiyah': ['Sur', 'Jalan Bani Bu Ali', 'Jalan Bani Bu Hassan', 'Al Kamil Wal Wafi', 'Masirah'],
+    'Al Wusta': ['Haima', 'Duqm', 'Mahout', 'Al Jazer', 'Ibra (Al Wusta)'],
+  };
+
+  List<String> get governorates => governorateWilayatMap.keys.toList();
+
+  List<String> get wilayats => _selectedGovernorate != null
+      ? governorateWilayatMap[_selectedGovernorate]!
+      : [];
 
   @override
   void initState() {
     super.initState();
     addressController.text = widget.data.address;
-    cityController.text = widget.data.city;
-    postalCodeController.text = widget.data.postalCode;
+    
+    // Initialize from existing data if available
+    if (widget.data.governorate.isNotEmpty && 
+        governorateWilayatMap.containsKey(widget.data.governorate)) {
+      _selectedGovernorate = widget.data.governorate;
+      if (widget.data.wilayat.isNotEmpty &&
+          governorateWilayatMap[widget.data.governorate]!.contains(widget.data.wilayat)) {
+        _selectedWilayat = widget.data.wilayat;
+      }
+    }
   }
 
   @override
   void dispose() {
     addressController.dispose();
-    cityController.dispose();
-    postalCodeController.dispose();
     super.dispose();
   }
 
@@ -170,25 +199,57 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
                               ),
                               const SizedBox(height: 24),
 
+                              // Governorate Dropdown
+                              _buildDropdownField(
+                                value: _selectedGovernorate,
+                                hint: "Select Governorate (Optional)",
+                                icon: Icons.map_rounded,
+                                items: governorates,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedGovernorate = value;
+                                    _selectedWilayat = null; // Reset wilayat when governorate changes
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 16),
+
+                              // Wilayat Dropdown (dynamic based on governorate)
+                              _buildDropdownField(
+                                value: _selectedWilayat,
+                                hint: _selectedGovernorate == null 
+                                    ? "Select Governorate First" 
+                                    : "Select Wilayat (Optional)",
+                                icon: Icons.location_city_rounded,
+                                items: wilayats,
+                                onChanged: _selectedGovernorate == null 
+                                    ? null 
+                                    : (value) {
+                                        setState(() {
+                                          _selectedWilayat = value;
+                                        });
+                                      },
+                                enabled: _selectedGovernorate != null,
+                              ),
+                              const SizedBox(height: 16),
+
                               _buildTextField(
                                 addressController, 
-                                "Address (Optional)", 
-                                Icons.home_filled
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                cityController, 
-                                "City (Optional)",
-                                Icons.location_city_rounded
-                              ),
-                              const SizedBox(height: 16),
-
-                              _buildTextField(
-                                postalCodeController, 
-                                "Postal Code (Optional)",
-                                Icons.markunread_mailbox_rounded,
-                                keyboardType: TextInputType.number
+                                "House Number (Optional)", 
+                                Icons.home_filled,
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return null; // Optional field
+                                  }
+                                  if (!RegExp(r'^\d+$').hasMatch(value.trim())) {
+                                    return "House number must contain only digits";
+                                  }
+                                  if (value.trim().length > 6) {
+                                    return "House number cannot exceed 6 digits";
+                                  }
+                                  return null;
+                                },
                               ),
 
                               const SizedBox(height: 35),
@@ -200,8 +261,8 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
                                 child: ElevatedButton(
                                   onPressed: () {
                                     widget.data.address = addressController.text.trim();
-                                    widget.data.city = cityController.text.trim();
-                                    widget.data.postalCode = postalCodeController.text.trim();
+                                    widget.data.governorate = _selectedGovernorate ?? '';
+                                    widget.data.wilayat = _selectedWilayat ?? '';
                                     
                                     Navigator.pushNamed(
                                       context,
@@ -244,17 +305,76 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
     );
   }
 
+  Widget _buildDropdownField({
+    required String? value,
+    required String hint,
+    required IconData icon,
+    required List<String> items,
+    required void Function(String?)? onChanged,
+    bool enabled = true,
+  }) {
+    const primaryDeep = Color(0xFF1A237E);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: enabled ? Colors.grey.shade50 : Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        isExpanded: true,
+        decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: enabled ? const Color(0xFF5C6BC0) : Colors.grey),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: primaryDeep, width: 1.5),
+          ),
+        ),
+        hint: Text(
+          hint,
+          style: TextStyle(
+            color: enabled ? Colors.grey.shade600 : Colors.grey.shade400,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        style: const TextStyle(
+          color: Colors.black87,
+          fontWeight: FontWeight.w500,
+        ),
+        dropdownColor: Colors.white,
+        icon: Icon(
+          Icons.keyboard_arrow_down_rounded,
+          color: enabled ? Colors.grey.shade600 : Colors.grey.shade400,
+        ),
+        items: items.map((String item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: enabled ? onChanged : null,
+      ),
+    );
+  }
+
   Widget _buildTextField(
     TextEditingController controller,
     String label,
     IconData icon, {
     TextInputType? keyboardType,
+    String? Function(String?)? validator,
   }) {
     const primaryDeep = Color(0xFF1A237E);
 
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      validator: validator,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       style: const TextStyle(fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: const Color(0xFF5C6BC0)),
@@ -274,6 +394,14 @@ class _UserRegisterStep2State extends State<UserRegisterStep2> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primaryDeep, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
       ),
     );

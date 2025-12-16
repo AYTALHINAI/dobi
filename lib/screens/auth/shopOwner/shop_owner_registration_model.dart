@@ -1,10 +1,16 @@
 class ShopOwnerRegistrationData {
+  // Step 1 - Owner Details
   String ownerName = '';
   String phone = '';
-  String? email = '';
   String? password = '';
+
+  // Step 2 - Shop Info
+  String? email = '';
   String shopName = '';
-  String shopAddress = '';
+  String shopPhone = '';
+  String shopAddress = ''; // Building/Shop Number
+  String governorate = '';
+  String wilayat = '';
 
   Map<String, dynamic> toMap() {
     return {
@@ -12,15 +18,24 @@ class ShopOwnerRegistrationData {
       'phone': phone,
       'email': email,
       'shopName': shopName,
+      'shopPhone': shopPhone,
       'shopAddress': shopAddress,
+      'governorate': governorate,
+      'wilayat': wilayat,
     };
   }
 
   bool isValidStep1() {
-    return ownerName.isNotEmpty && phone.isNotEmpty && email != null && password != null;
+    return ownerName.isNotEmpty && phone.isNotEmpty && password != null && password!.isNotEmpty;
   }
 
   bool isValidStep2() {
-    return shopName.isNotEmpty && shopAddress.isNotEmpty;
+    return shopName.isNotEmpty && 
+           shopPhone.isNotEmpty && 
+           email != null && 
+           email!.isNotEmpty &&
+           governorate.isNotEmpty && 
+           wilayat.isNotEmpty;
   }
 }
+
