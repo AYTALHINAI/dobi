@@ -51,13 +51,32 @@ class _ShopOwnerApplicantsPageState extends State<ShopOwnerApplicantsPage> {
         itemBuilder: (context, index) {
           var owner = applicants[index];
           return ListTile(
-            tileColor: Colors.grey.shade300,
+            tileColor: Colors.grey.shade100,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            title: Text(owner['fullName'] ?? "No Name"),
-            subtitle: Text(owner['email'] ?? ""),
-            trailing: const Icon(Icons.arrow_forward),
+            leading: CircleAvatar(
+              backgroundColor: const Color(0xFF1A237E),
+              child: Text(
+                (owner['ownerName'] ?? 'S')[0].toUpperCase(),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ),
+            title: Text(
+              owner['shopName'] ?? "No Shop Name",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(owner['ownerName'] ?? "No Owner Name"),
+                Text(
+                  "${owner['governorate'] ?? ''}, ${owner['wilayat'] ?? ''}",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
               Navigator.pushNamed(
                 context,
