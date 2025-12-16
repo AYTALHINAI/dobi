@@ -27,7 +27,7 @@ class AdminHomePage extends StatelessWidget {
             const SizedBox(height: 20),
             const Text(
               'Welcome, Admin!',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 23, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
 
