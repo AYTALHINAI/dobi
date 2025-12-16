@@ -162,7 +162,7 @@ class _DriverStep1BasicState extends State<DriverStep1Basic> {
                               const StepTrackerBar(
                                 currentStep: 1, 
                                 totalSteps: 3,
-                                stepLabels: ['Personal', 'Vehicle', 'License'],
+                                stepLabels: ['Personal', 'Vehicle', 'Confirm'],
                               ),
                               const SizedBox(height: 24),
 
