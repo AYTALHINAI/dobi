@@ -11,3 +11,10 @@ show possible deliveries for the driver
 # Driver
 Location preference after approval next semester
 The driver picks the city name and based on it he will get the possible deliveries
+
+# About Password Encryption
+Firebase Authentication already handles password security - when you create a user with createUserWithEmailAndPassword, Firebase:
+    - Hashes the password using industry-standard bcrypt
+    - Never stores passwords in plaintext
+    - All transmission is over HTTPS (encrypted in transit)
+    - You should not encrypt passwords before sending to Firebase Auth, as this would break the authentication flow.
