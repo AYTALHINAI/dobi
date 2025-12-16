@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../routes/app_routes.dart'; // make sure your routes file is imported
+import '../../routes/app_routes.dart';
+import 'package:google_nav_bar/google_nav_bar.dart'; 
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
@@ -8,13 +9,12 @@ class AdminHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // removes back arrow
+        automaticallyImplyLeading: false,
         title: const Text('Admin Dashboard'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
-              // You can also add a confirmation dialog if you want
               Navigator.pushReplacementNamed(context, AppRoutes.login);
             },
           ),
@@ -74,7 +74,28 @@ class AdminHomePage extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            // Add more admin actions here later
+          ],
+        ),
+      ),
+
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 40.0),
+        child: GNav(
+          color: Colors.blue,
+          activeColor: Colors.blue,
+          tabBackgroundColor: Colors.blue.shade100,
+          gap: 8,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          mainAxisAlignment: MainAxisAlignment.center,
+          tabs: const [
+            GButton(
+              icon: Icons.drive_eta,
+              text: "Driver Applicants",
+            ),
+            GButton(
+              icon: Icons.shopping_bag_rounded,
+              text: "Shop Owner Applicants",
+            ),
           ],
         ),
       ),

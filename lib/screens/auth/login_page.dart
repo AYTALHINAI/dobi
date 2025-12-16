@@ -93,20 +93,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
 
-
-//   // ------------------ Validators ------------------
-//   static String? validateEmail(String? value) {
-//     if (value == null || value.isEmpty) return "Enter your email";
-//     if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value.trim())) return "Enter a valid email";
-//     return null;
-//   }
-//
-//   static String? validatePassword(String? value) {
-//     if (value == null || value.isEmpty) return "Enter your password";
-//     return null;
-//   }
-// // ---------------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     // Using simple size to avoid complex rebuilds/focus loss
