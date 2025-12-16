@@ -287,4 +287,44 @@ class DatabaseService {
       return "unknown";
     }
   }
+
+  /// ------------------------------------------------
+  /// DASHBOARD COUNTS
+  /// ------------------------------------------------
+
+  /// Get total count of users
+  Future<int> getTotalUsers() async {
+    try {
+      final snapshot = await _firestore.collection('users').get();
+      return snapshot.docs.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Get total count of approved drivers
+  Future<int> getTotalDrivers() async {
+    try {
+      final snapshot = await _firestore
+          .collection('drivers')
+          .where('applicationStatus', isEqualTo: 'approved')
+          .get();
+      return snapshot.docs.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// Get total count of approved shop owners
+  Future<int> getTotalShopOwners() async {
+    try {
+      final snapshot = await _firestore
+          .collection('shopOwners')
+          .where('applicationStatus', isEqualTo: 'approved')
+          .get();
+      return snapshot.docs.length;
+    } catch (e) {
+      return 0;
+    }
+  }
 }

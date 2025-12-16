@@ -38,6 +38,9 @@ import '../screens/admin/driverApplicants/DriverApplicantsPage.dart';
 import '../screens/admin/shopOwners/ShopOwnerApplicantsPage.dart';
 import '../screens/admin/shopOwners/ShopOwnerApplicantDetailPage.dart';
 
+// ADMIN MANAGE REQUESTS
+import '../screens/admin/manage_requests_page.dart';
+
 class AppRoutes {
   // AUTH
   static const String login = '/login';
@@ -71,6 +74,7 @@ class AppRoutes {
   static const String adminDriverDetail = '/admin/driver-detail';
   static const String adminShopOwnerApplicants = '/admin/shop-owners';
   static const String adminShopOwnerDetail = '/admin/shop-owner-detail';
+  static const String adminManageRequests = '/admin/manage-requests';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -129,9 +133,13 @@ class AppRoutes {
         final ownerData = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(builder: (_) => ShopOwnerApplicantDetailPage(ownerData: ownerData));
 
+    // ADMIN MANAGE REQUESTS
+      case adminManageRequests:
+        return MaterialPageRoute(builder: (_) => const ManageRequestsPage());
+
     // HOME PAGES
       case adminHome:
-        return MaterialPageRoute(builder: (_) => AdminHomePage());
+        return MaterialPageRoute(builder: (_) => const AdminHomePage());
       case userHome:
         return MaterialPageRoute(builder: (_) => UserHomePage());
       case driverHome:

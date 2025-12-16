@@ -230,4 +230,3 @@ class ShopOwnerApplicantDetailPage extends StatelessWidget {
     );
   }
 }
-

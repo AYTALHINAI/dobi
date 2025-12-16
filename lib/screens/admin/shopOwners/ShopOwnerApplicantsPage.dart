@@ -43,50 +43,50 @@ class _ShopOwnerApplicantsPageState extends State<ShopOwnerApplicantsPage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : applicants.isEmpty
-          ? const Center(child: Text("No pending applicants."))
-          : ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: applicants.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
-          var owner = applicants[index];
-          return ListTile(
-            tileColor: Colors.grey.shade100,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            leading: CircleAvatar(
-              backgroundColor: const Color(0xFF1A237E),
-              child: Text(
-                (owner['ownerName'] ?? 'S')[0].toUpperCase(),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ),
-            title: Text(
-              owner['shopName'] ?? "No Shop Name",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(owner['ownerName'] ?? "No Owner Name"),
-                Text(
-                  "${owner['governorate'] ?? ''}, ${owner['wilayat'] ?? ''}",
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ? const Center(child: Text("No pending applicants."))
+              : ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: applicants.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    var owner = applicants[index];
+                    return ListTile(
+                      tileColor: Colors.grey.shade100,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: const Color(0xFF1A237E),
+                        child: Text(
+                          (owner['ownerName'] ?? 'S')[0].toUpperCase(),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      title: Text(
+                        owner['shopName'] ?? "No Shop Name",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(owner['ownerName'] ?? "No Owner Name"),
+                          Text(
+                            "${owner['governorate'] ?? ''}, ${owner['wilayat'] ?? ''}",
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.adminShopOwnerDetail,
+                          arguments: owner,
+                        ).then((_) => fetchApplicants());
+                      },
+                    );
+                  },
                 ),
-              ],
-            ),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.pushNamed(
-                context,
-                AppRoutes.adminShopOwnerDetail,
-                arguments: owner,
-              ).then((_) => fetchApplicants()); // refresh after approve/reject
-            },
-          );
-        },
-      ),
     );
   }
 }
