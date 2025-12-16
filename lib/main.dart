@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dobi App',
+      title: 'Dobbie App',
       debugShowCheckedModeBanner: false,
       onGenerateRoute: AppRoutes.generateRoute,
       initialRoute: AppRoutes.login,
