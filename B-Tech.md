@@ -18,3 +18,14 @@ Firebase Authentication already handles password security - when you create a us
     - Never stores passwords in plaintext
     - All transmission is over HTTPS (encrypted in transit)
     - You should not encrypt passwords before sending to Firebase Auth, as this would break the authentication flow.
+
+
+# Settings → About phone → Tap “Build number” 7 times
+
+# Settings → Developer options
+✅ debugging → ON
+✅ USB debugging (Security settings) → ON
+
+# After plugging the cable in:
+Swipe down → USB notification
+Select File Transfer (MTP)
