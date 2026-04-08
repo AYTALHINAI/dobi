@@ -327,4 +327,192 @@ class DatabaseService {
       return 0;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SHOP OWNER – reads & writes
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Fetch a single shop owner document.
+  Future<DocumentSnapshot> getShopOwnerDoc(String uid) =>
+      _firestore.collection('shopOwners').doc(uid).get();
+
+  /// Live stream of all approved shop owners (for user-facing search).
+  Stream<QuerySnapshot> getApprovedShopsStream() => _firestore
+      .collection('shopOwners')
+      .where('applicationStatus', isEqualTo: 'approved')
+      .snapshots();
+
+  /// Live stream of approved shops filtered by service category.
+  /// [category] should be one of: 'cloth_cleaning', 'blanket_cleaning'
+  Stream<QuerySnapshot> getShopsByCategoryStream(String category) => _firestore
+      .collection('shopOwners')
+      .where('applicationStatus', isEqualTo: 'approved')
+      .where('categories', arrayContains: category)
+      .snapshots();
+
+  /// Live stream of a shop owner's services sub-collection.
+  Stream<QuerySnapshot> getShopServicesStream(String uid) => _firestore
+      .collection('shopOwners')
+      .doc(uid)
+      .collection('services')
+      .orderBy('createdAt', descending: false)
+      .snapshots();
+
+  /// Save (or overwrite) the shop cover image URL on the shop owner doc.
+  Future<void> updateShopCoverPhoto(String uid, String url) =>
+      _firestore.collection('shopOwners').doc(uid).update({'shopImageUrl': url});
+
+  /// Save (or overwrite) the shop owner profile image URL.
+  Future<void> updateShopOwnerProfileImage(String uid, String url) =>
+      _firestore.collection('shopOwners').doc(uid).update({'profileImageUrl': url});
+
+  /// Save the shop owner's map location.
+  Future<void> updateShopLocation(
+          String uid, double latitude, double longitude) =>
+      _firestore.collection('shopOwners').doc(uid).update({
+        'latitude': latitude,
+        'longitude': longitude,
+      });
+
+  /// Update an existing service document.
+  Future<void> updateService(
+    String uid,
+    String serviceId,
+    Map<String, dynamic> data,
+  ) =>
+      _firestore
+          .collection('shopOwners')
+          .doc(uid)
+          .collection('services')
+          .doc(serviceId)
+          .update(data);
+
+  /// Delete a service document and rebuild the shop's categories array.
+  Future<void> deleteService(String uid, String serviceId) async {
+    await _firestore
+        .collection('shopOwners')
+        .doc(uid)
+        .collection('services')
+        .doc(serviceId)
+        .delete();
+    // Rebuild categories from remaining services
+    final remaining = await _firestore
+        .collection('shopOwners')
+        .doc(uid)
+        .collection('services')
+        .get();
+    final categories = remaining.docs
+        .map((d) => (d.data()['category'] as String?) ?? '')
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList();
+    await _firestore
+        .collection('shopOwners')
+        .doc(uid)
+        .update({'categories': categories});
+  }
+
+  /// Add a new service document and update the shop's categories array.
+  Future<void> addService(String uid, Map<String, dynamic> data) async {
+    await _firestore
+        .collection('shopOwners')
+        .doc(uid)
+        .collection('services')
+        .add(data);
+    // Denormalize category onto the shop doc for efficient customer queries
+    final category = data['category'] as String?;
+    if (category != null && category.isNotEmpty) {
+      await _firestore.collection('shopOwners').doc(uid).update({
+        'categories': FieldValue.arrayUnion([category]),
+      });
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // USER – reads & writes
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Fetch a single user document.
+  Future<DocumentSnapshot> getUserDoc(String uid) =>
+      _firestore.collection('users').doc(uid).get();
+
+  /// Merge-save fields on a user document (non-destructive).
+  Future<void> updateUserFields(String uid, Map<String, dynamic> data) =>
+      _firestore.collection('users').doc(uid).set(data, SetOptions(merge: true));
+
+  /// Save (or overwrite) the user profile image URL.
+  Future<void> updateUserProfileImage(String uid, String url) =>
+      updateUserFields(uid, {'profileImageUrl': url});
+
+  /// Returns true if [phone] is already registered to a user OTHER than [currentUid].
+  Future<bool> checkPhoneExistsForOtherUser(
+      String phone, String currentUid) async {
+    try {
+      final q = await _firestore
+          .collection('users')
+          .where('phone', isEqualTo: phone.trim())
+          .limit(2)
+          .get();
+      return q.docs.any((doc) => doc.id != currentUid);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // CART – reads & writes  (users/{uid}/cart/{cartItemId})
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Live stream of the current user's cart items.
+  Stream<QuerySnapshot> getCartStream(String uid) => _firestore
+      .collection('users')
+      .doc(uid)
+      .collection('cart')
+      .orderBy('addedAt', descending: false)
+      .snapshots();
+
+  /// Add or overwrite a cart item. [cartItemId] is typically the serviceId
+  /// so that re-adding the same service just updates the quantity.
+  Future<void> addToCart(String uid, String cartItemId,
+      Map<String, dynamic> item) =>
+      _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('cart')
+          .doc(cartItemId)
+          .set(item);
+
+  /// Update only the quantity field of an existing cart item.
+  Future<void> updateCartItemQty(
+      String uid, String cartItemId, int qty) =>
+      _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('cart')
+          .doc(cartItemId)
+          .update({'quantity': qty});
+
+  /// Remove a single item from the cart.
+  Future<void> removeCartItem(String uid, String cartItemId) =>
+      _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('cart')
+          .doc(cartItemId)
+          .delete();
+
+  /// Delete every item in the cart (batch for atomicity).
+  Future<void> clearCart(String uid) async {
+    final snap = await _firestore
+        .collection('users')
+        .doc(uid)
+        .collection('cart')
+        .get();
+    if (snap.docs.isEmpty) return;
+    final batch = _firestore.batch();
+    for (final doc in snap.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
 }

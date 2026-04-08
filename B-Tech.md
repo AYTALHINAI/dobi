@@ -29,3 +29,21 @@ Firebase Authentication already handles password security - when you create a us
 # After plugging the cable in:
 Swipe down → USB notification
 Select File Transfer (MTP)
+
+# Pov's Accounts
+
+# Admin
+Admin123@gmail.com
+adminadmin
+
+# User 
+user1@gmail.com
+asdASD123
+
+# Shop
+laundry1@gmail.com
+asdASD123
+
+# Driver
+driver1@gmail.com
+asdASD123

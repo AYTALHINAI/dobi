@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../database.dart';
 import 'shopOwner_orders_page.dart';
 import 'shopOwner_profile_page.dart';
 import 'shopOwner_services_page.dart';
@@ -16,6 +17,7 @@ class ShopOwnerHomePage extends StatefulWidget {
 class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
   int _selectedIndex = 0;
   String _shopName = '';
+  final _db = DatabaseService();
 
   @override
   void initState() {
@@ -27,13 +29,10 @@ class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
     try {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid == null) return;
-      final doc = await FirebaseFirestore.instance
-          .collection('shopOwners')
-          .doc(uid)
-          .get();
+      final doc = await _db.getShopOwnerDoc(uid);
       if (doc.exists && mounted) {
         setState(() {
-          _shopName = doc.data()?['shopName'] ?? '';
+          _shopName = (doc.data() as Map<String, dynamic>?)?['shopName'] ?? '';
         });
       }
     } catch (_) {}

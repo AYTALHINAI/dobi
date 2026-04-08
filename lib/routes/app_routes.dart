@@ -20,7 +20,7 @@ import '../screens/auth/driver/driver_registration_model.dart';
 
 // HOME PAGES
 import '../screens/admin/admin_home_page.dart';
-import '../screens/user/user_home_page.dart';
+import '../screens/user/user_main_page.dart';
 import '../screens/driver/driver_home_page.dart';
 import '../screens/shopOwner/shopOwner_home_page.dart';
 
@@ -141,7 +141,7 @@ class AppRoutes {
       case adminHome:
         return MaterialPageRoute(builder: (_) => const AdminHomePage());
       case userHome:
-        return MaterialPageRoute(builder: (_) => UserHomePage());
+        return MaterialPageRoute(builder: (_) => const UserMainPage());
       case driverHome:
         return MaterialPageRoute(builder: (_) => DriverHomePage());
       case shopOwnerHome:

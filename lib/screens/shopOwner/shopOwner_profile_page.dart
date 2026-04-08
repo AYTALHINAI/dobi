@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../database.dart';
 import '../../routes/app_routes.dart';
 
 class ShopOwnerProfilePage extends StatefulWidget {
@@ -26,8 +29,11 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
   double? _longitude;
 
   File? _pickedImage;
+  String? _profileImageUrl;
   bool _loading = true;
   bool _savingLocation = false;
+  bool _uploadingPhoto = false;
+  final _db = DatabaseService();
 
   final String? _uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -40,12 +46,9 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
   Future<void> _loadShopInfo() async {
     if (_uid == null) return;
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('shopOwners')
-          .doc(_uid)
-          .get();
+      final doc = await _db.getShopOwnerDoc(_uid);
       if (doc.exists && mounted) {
-        final data = doc.data()!;
+        final data = doc.data()! as Map<String, dynamic>;
         setState(() {
           _shopName = data['shopName'] ?? '';
           _ownerName = data['ownerName'] ?? '';
@@ -56,6 +59,7 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
           _wilayat = data['wilayat'] ?? '';
           _latitude = (data['latitude'] as num?)?.toDouble();
           _longitude = (data['longitude'] as num?)?.toDouble();
+          _profileImageUrl = data['profileImageUrl'];
           _loading = false;
         });
       }
@@ -68,8 +72,32 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
     final picker = ImagePicker();
     final XFile? picked =
         await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    if (picked != null && mounted) {
-      setState(() => _pickedImage = File(picked.path));
+    if (picked == null || _uid == null) return;
+
+    setState(() {
+      _pickedImage = File(picked.path);
+      _uploadingPhoto = true;
+    });
+
+    try {
+      // Upload to Firebase Storage
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('shopOwners/$_uid/profile_photo.jpg');
+      await ref.putFile(_pickedImage!);
+      final url = await ref.getDownloadURL();
+
+      await _db.updateShopOwnerProfileImage(_uid, url);
+
+      if (mounted) setState(() => _profileImageUrl = url);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Photo upload failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
 
@@ -94,13 +122,7 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
       });
 
       try {
-        await FirebaseFirestore.instance
-            .collection('shopOwners')
-            .doc(_uid)
-            .update({
-          'latitude': result.latitude,
-          'longitude': result.longitude,
-        });
+        await _db.updateShopLocation(_uid, result.latitude, result.longitude);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -151,12 +173,50 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
                                       color: Colors.grey.shade300, width: 2),
                                 ),
                                 clipBehavior: Clip.antiAlias,
-                                child: _pickedImage != null
+                                child: _pickedImage != null && _uploadingPhoto
+                                    // Show local file preview while uploading
                                     ? Image.file(_pickedImage!,
                                         fit: BoxFit.cover)
-                                    : const Icon(Icons.person,
-                                        size: 54, color: Colors.grey),
+                                    : _profileImageUrl != null
+                                        // Show saved photo from Firebase
+                                        ? Image.network(
+                                            _profileImageUrl!,
+                                            fit: BoxFit.cover,
+                                            loadingBuilder: (_, child, prog) =>
+                                                prog == null
+                                                    ? child
+                                                    : const Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                                strokeWidth:
+                                                                    2)),
+                                            errorBuilder: (_, __, ___) =>
+                                                const Icon(Icons.person,
+                                                    size: 54,
+                                                    color: Colors.grey),
+                                          )
+                                        : const Icon(Icons.person,
+                                            size: 54, color: Colors.grey),
                               ),
+                              // Upload spinner overlay
+                              if (_uploadingPhoto)
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Colors.black38,
+                                    ),
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 2.5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               Positioned(
                                 bottom: 2,
                                 right: 2,
@@ -290,7 +350,8 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
                                     tiltGesturesEnabled: false,
                                     zoomGesturesEnabled: false,
                                     myLocationButtonEnabled: false,
-                                    liteModeEnabled: true,
+                                    myLocationEnabled: false,
+                                    liteModeEnabled: false,
                                   ),
                                   // Tap overlay
                                   Container(
@@ -444,11 +505,84 @@ class _LocationPickerPage extends StatefulWidget {
 class _LocationPickerPageState extends State<_LocationPickerPage> {
   late LatLng _selectedLocation;
   GoogleMapController? _mapController;
+  bool _fetchingLocation = false;
 
   @override
   void initState() {
     super.initState();
     _selectedLocation = widget.initialLocation;
+  }
+
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    setState(() => _fetchingLocation = true);
+    try {
+      // Check if location services are enabled
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location services are disabled. Please enable GPS.'),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Check / request permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission denied. Please allow it in Settings.'),
+              backgroundColor: Colors.black87,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Get current position
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      final latLng = LatLng(pos.latitude, pos.longitude);
+
+      setState(() => _selectedLocation = latLng);
+      await _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: latLng, zoom: 16),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not get location: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _fetchingLocation = false);
+    }
   }
 
   @override
@@ -492,8 +626,10 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
               ),
             },
             onTap: (pos) => setState(() => _selectedLocation = pos),
-            myLocationButtonEnabled: true,
+            myLocationButtonEnabled: false,
+            myLocationEnabled: false,
             zoomControlsEnabled: true,
+            liteModeEnabled: false,
           ),
           // Instruction banner
           Positioned(
@@ -526,6 +662,45 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+          // Use Current Location button
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: _fetchingLocation ? null : _goToCurrentLocation,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2C2C54),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _fetchingLocation
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.my_location_rounded, color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Text('Use Current Location', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                ),
               ),
             ),
           ),
