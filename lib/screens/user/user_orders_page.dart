@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/user_theme.dart';
 
 class UserOrdersPage extends StatelessWidget {
   const UserOrdersPage({super.key});
@@ -6,16 +7,16 @@ class UserOrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.uiBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.uiBackground,
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
-        title: const Text(
+        title: Text(
           'Orders',
           style: TextStyle(
-            color: Colors.black87,
+            color: context.uiTextPrimary,
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),
@@ -28,21 +29,21 @@ class UserOrdersPage extends StatelessWidget {
             Icon(
               Icons.receipt_long_outlined,
               size: 64,
-              color: Colors.black.withValues(alpha: 0.15),
+              color: context.uiTextHint,
             ),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'No orders yet',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.black38,
+                color: context.uiTextSecondary,
               ),
             ),
-            const SizedBox(height: 6),
-            const Text(
+            SizedBox(height: 6),
+            Text(
               'Your orders will appear here once you place one.',
-              style: TextStyle(fontSize: 13, color: Colors.black26),
+              style: TextStyle(fontSize: 13, color: context.uiTextHint),
               textAlign: TextAlign.center,
             ),
           ],

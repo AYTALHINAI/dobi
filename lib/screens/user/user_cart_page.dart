@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../database.dart';
+import '../../theme/user_theme.dart';
 import 'user_booking_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -98,24 +99,63 @@ class _UserCartPageState extends State<UserCartPage> {
   Future<void> _confirmClearCart() async {
     final confirmed = await showDialog<bool>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Clear Cart',
-            style: TextStyle(fontWeight: FontWeight.w800)),
-        content: const Text(
-            'Are you sure you want to remove all items from your cart?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.black54)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        titlePadding: EdgeInsets.fromLTRB(24, 24, 24, 0),
+        contentPadding: EdgeInsets.fromLTRB(24, 16, 24, 0),
+        actionsPadding:
+            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        title: Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 24),
+            SizedBox(width: 10),
+            Text(
+              'Cancel Request',
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                color: context.uiTextPrimary,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to cancel this request? All selected services will be removed from your cart and this action cannot be undone.',
+          style: TextStyle(
+            fontSize: 14,
+            color: context.uiTextSecondary,
+            height: 1.55,
           ),
-          TextButton(
+        ),
+        actions: [
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: context.uiTextSecondary,
+              side: BorderSide(color: context.uiDivider),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text('Keep Request',
+                style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+          ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Clear',
-                style: TextStyle(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.w700)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              padding:
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text('Yes, Cancel',
+                style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -124,6 +164,31 @@ class _UserCartPageState extends State<UserCartPage> {
     setState(() => _clearing = true);
     try {
       await _db.clearCart(_uid!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle_outline,
+                    color: Colors.white, size: 18),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Your request has been cancelled successfully.',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: context.uiTextPrimary,
+            behavior: SnackBarBehavior.floating,
+            margin: EdgeInsets.all(16),
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(10))),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _clearing = false);
     }
@@ -131,7 +196,7 @@ class _UserCartPageState extends State<UserCartPage> {
 
   void _proceedToPayment() {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Row(
           children: [
             Icon(Icons.schedule_rounded, color: Colors.white, size: 18),
@@ -144,7 +209,7 @@ class _UserCartPageState extends State<UserCartPage> {
             ),
           ],
         ),
-        backgroundColor: Color(0xFF1A1AE6),
+        backgroundColor: context.uiPrimary,
         behavior: SnackBarBehavior.floating,
         margin: EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -172,11 +237,11 @@ class _UserCartPageState extends State<UserCartPage> {
         final isLoading = snapshot.connectionState == ConnectionState.waiting;
 
         return Scaffold(
-          backgroundColor: Colors.white,
+          backgroundColor: context.uiBackground,
           appBar: _buildAppBar(hasItems: docs.isNotEmpty),
           body: isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF1A1AE6)))
+              ? Center(
+                child: CircularProgressIndicator(color: context.uiPrimary))
               : docs.isEmpty
                   ? _buildEmptyState()
                   : _buildCartContent(docs),
@@ -192,31 +257,31 @@ class _UserCartPageState extends State<UserCartPage> {
 
   PreferredSizeWidget _buildAppBar({required bool hasItems}) {
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: context.uiBackground,
       elevation: 0,
       leading: GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Container(
-          margin: const EdgeInsets.all(8),
+          margin: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F4F6),
+            color: context.uiFill,
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Icon(Icons.arrow_back_ios_new_rounded,
-              size: 16, color: Colors.black87),
+          child: Icon(Icons.arrow_back_ios_new_rounded,
+              size: 16, color: context.uiTextPrimary),
         ),
       ),
-      title: const Text(
+      title: Text(
         'My Cart',
         style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Colors.black87),
+            color: context.uiTextPrimary),
       ),
       actions: [
         if (hasItems)
           _clearing
-              ? const Padding(
+              ? Padding(
                   padding: EdgeInsets.all(14),
                   child: SizedBox(
                       width: 20,
@@ -226,7 +291,7 @@ class _UserCartPageState extends State<UserCartPage> {
                 )
               : IconButton(
                   tooltip: 'Clear cart',
-                  icon: const Icon(Icons.delete_sweep_outlined,
+                  icon: Icon(Icons.delete_sweep_outlined,
                       color: Colors.redAccent),
                   onPressed: _confirmClearCart,
                 ),
@@ -239,7 +304,7 @@ class _UserCartPageState extends State<UserCartPage> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 36),
+        padding: EdgeInsets.symmetric(horizontal: 36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -247,40 +312,40 @@ class _UserCartPageState extends State<UserCartPage> {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1AE6).withValues(alpha: 0.07),
+                color: context.uiPrimary.withOpacity(0.07),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.shopping_cart_outlined,
-                  size: 52, color: Color(0xFF1A1AE6)),
+              child: Icon(Icons.shopping_cart_outlined,
+                  size: 52, color: context.uiPrimary),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24),
+            Text(
               'Your cart is empty',
               style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: Colors.black87),
+                  color: context.uiTextPrimary),
             ),
-            const SizedBox(height: 10),
-            const Text(
+            SizedBox(height: 10),
+            Text(
               'Browse laundry shops and add services to your cart.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.black45, height: 1.5),
+              style: TextStyle(fontSize: 14, color: context.uiTextSecondary, height: 1.5),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
             SizedBox(
               width: 180,
               height: 48,
               child: ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A1AE6),
+                  backgroundColor: context.uiPrimary,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)),
                 ),
-                child: const Text('Browse Shops',
+                child: Text('Browse Shops',
                     style: TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w700)),
               ),
@@ -302,19 +367,19 @@ class _UserCartPageState extends State<UserCartPage> {
     final grandTotal = subtotal + _transport.fee;
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+      padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       children: [
         // ── Shop header ──────────────────────────────────────────────────────
         _buildShopHeader(shopName, shopImageUrl, docs.length),
 
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
 
         // ── Item rows ────────────────────────────────────────────────────────
         ...docs.map((doc) => _buildItemRow(doc)),
 
         // ── Add Another Service ──────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           child: Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -323,27 +388,25 @@ class _UserCartPageState extends State<UserCartPage> {
                 if (shopId != null) {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => UserBookingPage(
-                        shopId: shopId,
-                        shopData: {
-                          'shopName': shopName,
-                          if (shopImageUrl != null) 'shopImageUrl': shopImageUrl,
-                        },
-                      ),
-                    ),
+                    userPageRoute((_) => UserBookingPage(
+                      shopId: shopId,
+                      shopData: {
+                        'shopName': shopName,
+                        if (shopImageUrl != null) 'shopImageUrl': shopImageUrl,
+                      },
+                    )),
                   );
                 }
               },
-              icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-              label: const Text(
+              icon: Icon(Icons.add_circle_outline_rounded, size: 20),
+              label: Text(
                 'Add another service',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF1A1AE6),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                backgroundColor: const Color(0xFF1A1AE6).withValues(alpha: 0.08),
+                foregroundColor: context.uiPrimary,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                backgroundColor: context.uiPrimary.withValues(alpha: 0.08),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -363,11 +426,11 @@ class _UserCartPageState extends State<UserCartPage> {
         // ── Order Summary ────────────────────────────────────────────────────
         const _SectionHeader(title: 'Order Summary'),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F4F6),
+              color: context.uiFill,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
@@ -375,26 +438,26 @@ class _UserCartPageState extends State<UserCartPage> {
                 _SummaryLine(
                     label: 'Subtotal (${docs.length} item${docs.length == 1 ? '' : 's'})',
                     value: subtotal),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _SummaryLine(label: 'Transport', value: _transport.fee),
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(height: 1, color: Color(0xFFDDDDDD)),
+                  child: Divider(height: 1, color: context.uiDivider),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Total',
+                    Text('Total',
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: Colors.black87)),
+                            color: context.uiTextPrimary)),
                     Text(
                       '${grandTotal.toStringAsFixed(3)} OMR',
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF1A1AE6)),
+                          color: context.uiPrimary),
                     ),
                   ],
                 ),
@@ -405,26 +468,27 @@ class _UserCartPageState extends State<UserCartPage> {
 
         // ── Coming soon notice ───────────────────────────────────────────────
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+          padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: Container(
             padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50,
+              color: context.uiPrimary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.amber.shade200),
+              border: Border.all(
+                  color: context.uiPrimary.withValues(alpha: 0.25)),
             ),
             child: Row(
               children: [
                 Icon(Icons.info_outline_rounded,
-                    size: 16, color: Colors.amber.shade700),
-                const SizedBox(width: 8),
+                    size: 16, color: context.uiPrimary),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Online payment is coming soon. Stay tuned!',
                     style: TextStyle(
                         fontSize: 12,
-                        color: Colors.amber.shade900,
+                        color: context.uiTextSecondary,
                         fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -433,7 +497,7 @@ class _UserCartPageState extends State<UserCartPage> {
           ),
         ),
 
-        const SizedBox(height: 110), // space for bottom bar
+        SizedBox(height: 110), // space for bottom bar
       ],
     );
   }
@@ -441,13 +505,13 @@ class _UserCartPageState extends State<UserCartPage> {
   Widget _buildShopHeader(
       String shopName, String? imageUrl, int itemCount) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-      padding: const EdgeInsets.all(14),
+      margin: EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1AE6).withValues(alpha: 0.05),
+        color: context.uiPrimary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: const Color(0xFF1A1AE6).withValues(alpha: 0.15)),
+            color: context.uiPrimary.withOpacity(0.15)),
       ),
       child: Row(
         children: [
@@ -457,40 +521,40 @@ class _UserCartPageState extends State<UserCartPage> {
             height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              color: const Color(0xFF1A1AE6).withValues(alpha: 0.1),
+              color: context.uiPrimary.withValues(alpha: 0.1),
             ),
             clipBehavior: Clip.antiAlias,
             child: imageUrl != null
                 ? Image.network(imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const Icon(
+                    errorBuilder: (_, __, ___) => Icon(
                         Icons.store_mall_directory_outlined,
-                        color: Color(0xFF1A1AE6),
+                        color: context.uiPrimary,
                         size: 26))
-                : const Icon(Icons.store_mall_directory_outlined,
-                    color: Color(0xFF1A1AE6), size: 26),
+                : Icon(Icons.store_mall_directory_outlined,
+                    color: context.uiPrimary, size: 26),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(shopName,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
-                        color: Colors.black87)),
-                const SizedBox(height: 2),
+                        color: context.uiTextPrimary)),
+                SizedBox(height: 2),
                 Text(
                   '$itemCount service${itemCount == 1 ? '' : 's'} selected',
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.black45),
+                  style: TextStyle(
+                      fontSize: 12, color: context.uiTextSecondary),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.verified_outlined,
-              size: 18, color: Color(0xFF1A1AE6)),
+          Icon(Icons.verified_outlined,
+              size: 18, color: context.uiPrimary),
         ],
       ),
     );
@@ -504,12 +568,12 @@ class _UserCartPageState extends State<UserCartPage> {
     final lineTotal = unitPrice * qty;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.uiSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEEEEEE)),
+        border: Border.all(color: context.uiDivider),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -524,13 +588,13 @@ class _UserCartPageState extends State<UserCartPage> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1AE6).withValues(alpha: 0.08),
+              color: context.uiPrimary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.dry_cleaning_outlined,
-                color: Color(0xFF1A1AE6), size: 20),
+            child: Icon(Icons.dry_cleaning_outlined,
+                color: context.uiPrimary, size: 20),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
 
           // Name + price
           Expanded(
@@ -538,13 +602,13 @@ class _UserCartPageState extends State<UserCartPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(name,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: Colors.black87)),
+                        color: context.uiTextPrimary)),
                 Text('${unitPrice.toStringAsFixed(3)} OMR / item',
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.black38)),
+                    style: TextStyle(
+                        fontSize: 11, color: context.uiTextHint)),
               ],
             ),
           ),
@@ -555,28 +619,30 @@ class _UserCartPageState extends State<UserCartPage> {
               // Line total
               Text(
                 '${lineTotal.toStringAsFixed(3)}',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1AE6)),
+                    color: context.uiPrimary),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               _CartQtyBtn(
                 icon: qty > 1 ? Icons.remove : Icons.delete_outline,
                 color: qty > 1
-                    ? const Color(0xFF1A1AE6)
+                    ? context.uiPrimary
                     : Colors.redAccent,
                 onTap: () => _updateQty(doc.id, qty - 1),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: EdgeInsets.symmetric(horizontal: 6),
                 child: Text('$qty',
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w800)),
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: context.uiTextPrimary)),
               ),
               _CartQtyBtn(
                 icon: Icons.add,
-                color: const Color(0xFF1A1AE6),
+                color: context.uiPrimary,
                 onTap: () => _updateQty(doc.id, qty + 1),
               ),
             ],
@@ -592,7 +658,7 @@ class _UserCartPageState extends State<UserCartPage> {
       onTap: () => setState(() => _transport = option),
       child: Padding(
         padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+            EdgeInsets.symmetric(horizontal: 20, vertical: 11),
         child: Row(
           children: [
             Expanded(
@@ -606,12 +672,12 @@ class _UserCartPageState extends State<UserCartPage> {
                       fontWeight: isSelected
                           ? FontWeight.w700
                           : FontWeight.w500,
-                      color: Colors.black87,
+                      color: context.uiTextPrimary,
                     ),
                   ),
                   Text(option.subtitle,
-                      style: const TextStyle(
-                          fontSize: 11, color: Colors.black38)),
+                      style: TextStyle(
+                          fontSize: 11, color: context.uiTextHint)),
                 ],
               ),
             ),
@@ -622,17 +688,17 @@ class _UserCartPageState extends State<UserCartPage> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected
-                    ? const Color(0xFF1A1AE6)
+                    ? context.uiPrimary
                     : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF1A1AE6)
-                      : Colors.black26,
+                      ? context.uiPrimary
+                      : context.uiTextHint,
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.circle,
+                  ? Icon(Icons.circle,
                       size: 10, color: Colors.white)
                   : null,
             ),
@@ -645,12 +711,12 @@ class _UserCartPageState extends State<UserCartPage> {
   Widget _buildBottomBar(List<QueryDocumentSnapshot> docs) {
     final grandTotal = _subtotal(docs) + _transport.fee;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.uiBackground,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.07),
+              color: Colors.black.withOpacity(0.07),
               blurRadius: 12,
               offset: const Offset(0, -3)),
         ],
@@ -660,7 +726,7 @@ class _UserCartPageState extends State<UserCartPage> {
         child: ElevatedButton(
           onPressed: _proceedToPayment,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1A1AE6),
+            backgroundColor: context.uiPrimary,
             foregroundColor: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -669,11 +735,11 @@ class _UserCartPageState extends State<UserCartPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.payment_outlined, size: 20),
-              const SizedBox(width: 8),
+              Icon(Icons.payment_outlined, size: 20),
+              SizedBox(width: 8),
               Text(
                 'Proceed to Payment  ·  ${grandTotal.toStringAsFixed(3)} OMR',
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ],
@@ -720,12 +786,12 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      padding: EdgeInsets.fromLTRB(20, 4, 20, 4),
       child: Text(title,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w800,
-              color: Colors.black87)),
+              color: context.uiTextPrimary)),
     );
   }
 }
@@ -735,9 +801,9 @@ class _SectionDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
+    return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+      child: Divider(height: 1, color: context.uiDivider),
     );
   }
 }
@@ -753,12 +819,12 @@ class _SummaryLine extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label,
-            style: const TextStyle(fontSize: 13, color: Colors.black54)),
+            style: TextStyle(fontSize: 13, color: context.uiTextSecondary)),
         Text('${value.toStringAsFixed(3)} OMR',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
-                color: Colors.black87)),
+                color: context.uiTextPrimary)),
       ],
     );
   }

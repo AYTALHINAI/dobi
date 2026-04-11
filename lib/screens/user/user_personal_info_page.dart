@@ -1,3 +1,4 @@
+import '../../theme/user_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -69,7 +70,8 @@ const Map<String, List<String>> _governorateWilayatMap = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 class UserPersonalInfoPage extends StatefulWidget {
-  const UserPersonalInfoPage({super.key});
+  final bool isSetupMode;
+  const UserPersonalInfoPage({super.key, this.isSetupMode = false});
 
   @override
   State<UserPersonalInfoPage> createState() => _UserPersonalInfoPageState();
@@ -147,6 +149,11 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
         if (lat != null && lng != null) {
           _pickedLocation = LatLng(lat, lng);
         }
+      } else if (widget.isSetupMode) {
+        // New Google user — pre-fill name & email from Firebase Auth
+        final firebaseUser = FirebaseAuth.instance.currentUser;
+        _nameCtrl.text = firebaseUser?.displayName ?? '';
+        _emailCtrl.text = firebaseUser?.email ?? '';
       }
     } catch (_) {}
     if (mounted) setState(() => _loading = false);
@@ -159,9 +166,7 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
 
     final result = await Navigator.push<LatLng>(
       context,
-      MaterialPageRoute(
-        builder: (_) => _LocationPickerPage(initialLocation: initial),
-      ),
+      userPageRoute((_) => _LocationPickerPage(initialLocation: initial)),
     );
 
     if (result != null && mounted) {
@@ -204,16 +209,26 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
         'wilayat': _selectedWilayat ?? '',
         if (_pickedLocation != null) 'latitude': _pickedLocation!.latitude,
         if (_pickedLocation != null) 'longitude': _pickedLocation!.longitude,
+        if (widget.isSetupMode) 'isNewGoogleUser': false,
       });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Personal info updated successfully.'),
-            backgroundColor: Color(0xFF1A1AE6),
+          SnackBar(
+            content: Text(
+              widget.isSetupMode
+                  ? 'Profile complete! Welcome to Dobbie 🎉'
+                  : 'Personal info updated successfully.',
+            ),
+            backgroundColor: context.uiPrimary,
           ),
         );
-        Navigator.pop(context);
+        if (widget.isSetupMode) {
+          // Replace the entire navigation stack — user goes to home
+          Navigator.pushReplacementNamed(context, '/home/user');
+        } else {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -230,42 +245,46 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.uiBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.uiBackground,
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F4F6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.arrow_back_ios_new_rounded,
-                size: 16, color: Colors.black87),
-          ),
-        ),
-        title: const Text(
-          'Personal Info',
+        // In setup mode, the user must not go back — hide the back button
+        automaticallyImplyLeading: !widget.isSetupMode,
+        leading: widget.isSetupMode
+            ? null
+            : GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  margin: EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: context.uiFill,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.arrow_back_ios_new_rounded,
+                      size: 16, color: context.uiTextPrimary),
+                ),
+              ),
+        title: Text(
+          widget.isSetupMode ? 'Complete Your Profile' : 'Personal Info',
           style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: Colors.black87),
+              color: context.uiTextPrimary),
         ),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1A1AE6)))
+          ? Center(
+              child: CircularProgressIndicator(color: context.uiPrimary))
           : Form(
               key: _formKey,
               child: ListView(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                    EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 children: [
                   // ── Basic Info ───────────────────────────────────────────
                   _SectionTitle(title: 'Basic Information'),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
                   _buildTextField(
                     controller: _nameCtrl,
                     label: 'Full Name',
@@ -281,7 +300,7 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
                   _buildTextField(
                     controller: _phoneCtrl,
                     label: 'Phone Number',
@@ -301,18 +320,18 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
                   _buildTextField(
                     controller: _emailCtrl,
                     label: 'Email',
                     icon: Icons.email_outlined,
                     enabled: false,
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: 28),
 
                   // ── Address ──────────────────────────────────────────────
                   _SectionTitle(title: 'Address'),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
 
                   // Governorate dropdown
                   _buildDropdown(
@@ -325,7 +344,7 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                       _selectedWilayat = null; // reset dependent
                     }),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
 
                   // Wilayat dropdown (dependent on governorate)
                   _buildDropdown(
@@ -340,23 +359,23 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                         ? null
                         : (val) => setState(() => _selectedWilayat = val),
                   ),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14),
 
                   _buildTextField(
                     controller: _addressCtrl,
                     label: 'House / Building Number (Optional)',
                     icon: Icons.home_outlined,
                   ),
-                  const SizedBox(height: 28),
+                  SizedBox(height: 28),
 
                   // ── Delivery Location ────────────────────────────────────
                   Row(
                     children: [
                       _SectionTitle(title: 'Delivery Location'),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       if (_pickedLocation == null)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
@@ -368,7 +387,7 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                             children: [
                               Icon(Icons.warning_amber_rounded,
                                   size: 12, color: Colors.red.shade600),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4),
                               Text(
                                 'Required for ordering',
                                 style: TextStyle(
@@ -381,13 +400,13 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 6),
                   Text(
                     'Tap the map to open the location picker and pin your delivery address.',
                     style:
-                        TextStyle(fontSize: 12, color: Colors.black45),
+                        TextStyle(fontSize: 12, color: context.uiTextSecondary),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
 
                   // Map preview / placeholder — tapping opens full-screen picker
                   GestureDetector(
@@ -396,11 +415,11 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                       height: 180,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        color: const Color(0xFFF5F5F7),
+                        color: context.uiFill,
                         border: Border.all(
                           color: _pickedLocation == null
                               ? Colors.red.shade300
-                              : const Color(0xFF1A1AE6)
+                              : context.uiPrimary
                                   .withValues(alpha: 0.3),
                           width: _pickedLocation == null ? 2 : 1.5,
                         ),
@@ -437,16 +456,16 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                                 Align(
                                   alignment: Alignment.bottomRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.all(10),
+                                    padding: EdgeInsets.all(10),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(
+                                      padding: EdgeInsets.symmetric(
                                           horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1A1AE6),
+                                        color: context.uiPrimary,
                                         borderRadius:
                                             BorderRadius.circular(20),
                                       ),
-                                      child: const Row(
+                                      child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           Icon(Icons.edit_location_alt,
@@ -469,16 +488,16 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
+                                  Icon(
                                       Icons.add_location_alt_outlined,
                                       size: 36,
-                                      color: Color(0xFF1A1AE6)),
-                                  const SizedBox(height: 8),
+                                      color: context.uiPrimary),
+                                  SizedBox(height: 8),
                                   Text(
                                     'Tap to set your delivery location',
                                     style: TextStyle(
                                         fontSize: 13,
-                                        color: Colors.grey.shade600),
+                                        color: context.uiTextHint),
                                   ),
                                 ],
                               ),
@@ -487,22 +506,22 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                   ),
 
                   if (_pickedLocation != null) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.check_circle_rounded,
-                            size: 14, color: Color(0xFF1A1AE6)),
-                        const SizedBox(width: 6),
+                        Icon(Icons.check_circle_rounded,
+                            size: 14, color: context.uiPrimary),
+                        SizedBox(width: 6),
                         Text(
                           'Location pinned — tap map to change',
                           style:
-                              TextStyle(fontSize: 12, color: Colors.black45),
+                              TextStyle(fontSize: 12, color: context.uiTextSecondary),
                         ),
                       ],
                     ),
                   ],
 
-                  const SizedBox(height: 36),
+                  SizedBox(height: 36),
 
                   // ── Save button ──────────────────────────────────────────
                   SizedBox(
@@ -511,25 +530,26 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _save,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1A1AE6),
+                        backgroundColor: context.uiPrimary,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14)),
                       ),
                       child: _saving
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 22,
                               height: 22,
                               child: CircularProgressIndicator(
                                   color: Colors.white, strokeWidth: 2.5))
-                          : const Text('Save Changes',
+                          : Text(
+                              widget.isSetupMode ? 'Get Started' : 'Save Changes',
                               style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700)),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                 ],
               ),
             ),
@@ -554,18 +574,18 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       style: TextStyle(
           fontSize: 14,
-          color: enabled ? Colors.black87 : Colors.black38),
+          color: enabled ? context.uiTextPrimary : context.uiTextHint),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(fontSize: 13, color: Colors.black45),
+        labelStyle: TextStyle(fontSize: 13, color: context.uiTextSecondary),
         prefixIcon: Icon(icon,
             size: 20,
-            color: enabled ? const Color(0xFF1A1AE6) : Colors.black26),
+            color: enabled ? context.uiPrimary : context.uiTextHint),
         filled: true,
         fillColor:
-            enabled ? const Color(0xFFF5F5F7) : const Color(0xFFF0F0F0),
+            enabled ? context.uiFill : context.uiFill,
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -577,15 +597,15 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-              const BorderSide(color: Color(0xFF1A1AE6), width: 1.5),
+              BorderSide(color: context.uiPrimary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          borderSide: BorderSide(color: Colors.red, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          borderSide: BorderSide(color: Colors.red, width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -605,7 +625,7 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: enabled ? const Color(0xFFF5F5F7) : const Color(0xFFF0F0F0),
+        color: enabled ? context.uiFill : context.uiFill,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: enabled ? Colors.transparent : Colors.transparent,
@@ -618,33 +638,33 @@ class _UserPersonalInfoPageState extends State<UserPersonalInfoPage> {
           prefixIcon: Icon(
             icon,
             size: 20,
-            color: enabled ? const Color(0xFF1A1AE6) : Colors.black26,
+            color: enabled ? context.uiPrimary : context.uiTextHint,
           ),
           contentPadding:
-              const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide:
-                const BorderSide(color: Color(0xFF1A1AE6), width: 1.5),
+                BorderSide(color: context.uiPrimary, width: 1.5),
           ),
         ),
         hint: Text(
           hint,
           style: TextStyle(
             fontSize: 13,
-            color: enabled ? Colors.black45 : Colors.black26,
+            color: enabled ? context.uiTextSecondary : context.uiTextHint,
           ),
         ),
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Colors.black87,
+          color: context.uiTextPrimary,
         ),
-        dropdownColor: Colors.white,
+        dropdownColor: context.uiSurface,
         icon: Icon(
           Icons.keyboard_arrow_down_rounded,
-          color: enabled ? Colors.black45 : Colors.black26,
+          color: enabled ? context.uiTextSecondary : context.uiTextHint,
         ),
         items: items
             .map((item) => DropdownMenuItem<String>(
@@ -670,10 +690,10 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 15,
         fontWeight: FontWeight.w800,
-        color: Colors.black87,
+        color: context.uiTextPrimary,
       ),
     );
   }
@@ -714,9 +734,9 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
       if (!await Geolocator.isLocationServiceEnabled()) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location services are disabled. Please enable GPS.'),
-              backgroundColor: Colors.black87,
+            SnackBar(
+              content: const Text('Location services are disabled. Please enable GPS.'),
+              backgroundColor: context.uiTextPrimary,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -732,9 +752,9 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
           permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission denied. Please allow it in Settings.'),
-              backgroundColor: Colors.black87,
+            SnackBar(
+              content: const Text('Location permission denied. Please allow it in Settings.'),
+              backgroundColor: context.uiTextPrimary,
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -774,9 +794,9 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1AE6),
+        backgroundColor: context.uiPrimary,
         foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'Pin Delivery Location',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
         ),
@@ -784,7 +804,7 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
           TextButton(
             onPressed: () =>
                 Navigator.pop(context, _selectedLocation),
-            child: const Text(
+            child: Text(
               'Confirm',
               style: TextStyle(
                   color: Colors.white,
@@ -825,10 +845,9 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
             left: 16,
             right: 16,
             child: Container(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                   horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(color: context.uiSurface,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
@@ -838,16 +857,16 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
                   ),
                 ],
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.info_outline,
-                      size: 16, color: Color(0xFF1A1AE6)),
+                      size: 16, color: context.uiPrimary),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       'Tap the map or drag the pin to set your delivery location',
                       style:
-                          TextStyle(fontSize: 12, color: Colors.black54),
+                          TextStyle(fontSize: 12, color: context.uiTextSecondary),
                     ),
                   ),
                 ],
@@ -864,10 +883,10 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
                 onTap: _fetchingLocation ? null : _goToCurrentLocation,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                       horizontal: 20, vertical: 13),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1AE6),
+                    color: context.uiPrimary,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
@@ -878,12 +897,12 @@ class _LocationPickerPageState extends State<_LocationPickerPage> {
                     ],
                   ),
                   child: _fetchingLocation
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2.5, color: Colors.white))
-                      : const Row(
+                      : Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.my_location_rounded,

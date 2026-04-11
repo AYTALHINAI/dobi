@@ -2,50 +2,13 @@ import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 import '../../database.dart';
 
-class AdminHomePage extends StatefulWidget {
+class AdminHomePage extends StatelessWidget {
   const AdminHomePage({super.key});
 
   @override
-  State<AdminHomePage> createState() => _AdminHomePageState();
-}
-
-class _AdminHomePageState extends State<AdminHomePage> {
-  final DatabaseService _db = DatabaseService();
-  
-  int _totalUsers = 0;
-  int _totalShops = 0;
-  int _totalDrivers = 0;
-  final int _totalOrders = 0; // Static for now
-  
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDashboardData();
-  }
-
-  Future<void> _loadDashboardData() async {
-    try {
-      final users = await _db.getTotalUsers();
-      final shops = await _db.getTotalShopOwners();
-      final drivers = await _db.getTotalDrivers();
-      
-      setState(() {
-        _totalUsers = users;
-        _totalShops = shops;
-        _totalDrivers = drivers;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final db = DatabaseService();
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -53,97 +16,219 @@ class _AdminHomePageState extends State<AdminHomePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, AppRoutes.login);
-            },
+            onPressed: () =>
+                Navigator.pushReplacementNamed(context, AppRoutes.login),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  // Dashboard Stats Grid
-                  _buildStatsGrid(),
-                  
-                  const SizedBox(height: 30),
-                  
-                  // Navigation Buttons
-                  _buildNavigationButtons(),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildStatsGrid() {
-    return Column(
-      children: [
-        // First Row: Users and Shops
-        Row(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
           children: [
-            Expanded(
-              child: _buildStatCard(
-                title: 'USERS',
-                count: _totalUsers,
-                icon: Icons.person,
-                color: const Color(0xFF2196F3), // Blue
+            // ── Stats grid ─────────────────────────────────────────────────
+            Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _LiveStatCard(
+                        title: 'Users',
+                        icon: Icons.person,
+                        color: const Color(0xFF2196F3),
+                        stream: db.watchTotalUsers(),
+                        tooltip: 'Registered customers',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _LiveStatCard(
+                        title: 'Shops',
+                        icon: Icons.storefront,
+                        color: Colors.purple,
+                        stream: db.watchTotalShopOwners(),
+                        tooltip: 'Approved laundry shops',
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _LiveStatCard(
+                        title: 'Drivers',
+                        icon: Icons.delivery_dining,
+                        color: Colors.orange,
+                        stream: db.watchTotalDrivers(),
+                        tooltip: 'Approved drivers',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Orders — not functional yet, shown greyed out
+                    Expanded(
+                      child: _StaticStatCard(
+                        title: 'Orders',
+                        icon: Icons.list_alt,
+                        color: const Color(0xFF4CAF50),
+                        count: '—',
+                        tooltip: 'Coming soon',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 30),
+
+            // ── Navigation buttons ─────────────────────────────────────────
+            _NavButton(
+              title: 'Manage users & feedbacks',
+              icon: Icons.person_search,
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('Coming soon!'),
+                    duration: Duration(seconds: 2)),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                title: 'Shops',
-                count: _totalShops,
-                icon: Icons.storefront,
-                color: Colors.purple, 
-              ),
+            const SizedBox(height: 12),
+            _NavButton(
+              title: 'Manage drivers & requests',
+              icon: Icons.delivery_dining,
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.adminManageRequests),
             ),
+            const SizedBox(height: 12),
+            _NavButton(
+              title: 'Approved Shops & Drivers',
+              icon: Icons.verified_user_outlined,
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.adminApprovedMembers),
+            ),
+            // const SizedBox(height: 12),
+            // _NavButton(
+            //   title: 'View System Logs',
+            //   icon: Icons.settings,
+            //   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            //     const SnackBar(
+            //         content: Text('Coming soon!'),
+            //         duration: Duration(seconds: 2)),
+            //   ),
+            // ),
           ],
         ),
-        const SizedBox(height: 12),
-        // Second Row: Drivers and Orders
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                title: 'Drivers',
-                count: _totalDrivers,
-                icon: Icons.delivery_dining,
-                color: Colors.orange, 
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                title: 'Orders',
-                count: _totalOrders,
-                icon: Icons.list_alt,
-                color: const Color(0xFF4CAF50), // Green
-              ),
-            ),
-          ],
-        ),
-      ],
+      ),
     );
   }
+}
 
-  Widget _buildStatCard({
-    required String title,
-    required int count,
-    required IconData icon,
-    required Color color,
-  }) {
+// ─── Live stat card (StreamBuilder) ──────────────────────────────────────────
+
+class _LiveStatCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final Stream<int> stream;
+  final String tooltip;
+
+  const _LiveStatCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.stream,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: stream,
+      builder: (context, snapshot) {
+        final countText = snapshot.hasData
+            ? snapshot.data!.toString()
+            : snapshot.hasError
+                ? '!'
+                : '…';
+
+        return Tooltip(
+          message: tooltip,
+          child: _StatCardShell(
+            title: title,
+            icon: icon,
+            color: color,
+            countText: countText,
+            loading: snapshot.connectionState == ConnectionState.waiting,
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ─── Static stat card (for Orders until order system is live) ─────────────────
+
+class _StaticStatCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final String count;
+  final String tooltip;
+
+  const _StaticStatCard({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.count,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: _StatCardShell(
+        title: title,
+        icon: icon,
+        color: color,
+        countText: count,
+        loading: false,
+        dimmed: true,
+      ),
+    );
+  }
+}
+
+// ─── Card shell ───────────────────────────────────────────────────────────────
+
+class _StatCardShell extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final String countText;
+  final bool loading;
+  final bool dimmed;
+
+  const _StatCardShell({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.countText,
+    required this.loading,
+    this.dimmed = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = dimmed ? color.withOpacity(0.55) : color;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color,
+        color: effectiveColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: effectiveColor.withOpacity(0.3),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -159,7 +244,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 title,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -167,82 +252,56 @@ class _AdminHomePageState extends State<AdminHomePage> {
               Icon(
                 icon,
                 color: Colors.white.withOpacity(0.9),
-                size: 32,
+                size: 30,
               ),
             ],
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Text(
-              count.toString(),
-              style: TextStyle(
-                color: color,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: loading
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: effectiveColor,
+                    ),
+                  )
+                : Text(
+                    countText,
+                    style: TextStyle(
+                      color: effectiveColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildNavigationButtons() {
-    return Column(
-      children: [
-        _buildNavButton(
-          title: 'Manage users & feedbacks',
-          icon: Icons.person_search,
-          onTap: () {
-            // Placeholder - no navigation yet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Coming soon!'), duration: Duration(seconds: 2)),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildNavButton(
-          title: 'Manage drivers & requests',
-          icon: Icons.delivery_dining,
-          onTap: () {
-            Navigator.pushNamed(context, AppRoutes.adminManageRequests);
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildNavButton(
-          title: 'Manage Laundry Shops',
-          icon: Icons.storefront,
-          onTap: () {
-            // Placeholder - no navigation yet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Coming soon!'), duration: Duration(seconds: 2)),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildNavButton(
-          title: 'View System Logs',
-          icon: Icons.settings,
-          onTap: () {
-            // Placeholder - no navigation yet
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Coming soon!'), duration: Duration(seconds: 2)),
-            );
-          },
-        ),
-      ],
-    );
-  }
+// ─── Nav button ───────────────────────────────────────────────────────────────
 
-  Widget _buildNavButton({
-    required String title,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+class _NavButton extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _NavButton({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -250,16 +309,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF2D2D2D), // Dark gray/black
+          color: const Color(0xFF2D2D2D),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 24,
-            ),
+            Icon(icon, color: Colors.white, size: 24),
             const SizedBox(width: 16),
             Text(
               title,

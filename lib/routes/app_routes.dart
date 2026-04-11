@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../main.dart' show userThemeNotifier;
 
 // AUTH SCREENS
 import '../screens/auth/login_page.dart';
@@ -21,6 +22,7 @@ import '../screens/auth/driver/driver_registration_model.dart';
 // HOME PAGES
 import '../screens/admin/admin_home_page.dart';
 import '../screens/user/user_main_page.dart';
+import '../screens/user/user_personal_info_page.dart';
 import '../screens/driver/driver_home_page.dart';
 import '../screens/shopOwner/shopOwner_home_page.dart';
 
@@ -40,6 +42,12 @@ import '../screens/admin/shopOwners/ShopOwnerApplicantDetailPage.dart';
 
 // ADMIN MANAGE REQUESTS
 import '../screens/admin/manage_requests_page.dart';
+
+// ADMIN APPROVED MEMBERS
+import '../screens/admin/admin_approved_members_page.dart';
+
+// USER THEME
+import '../theme/user_theme.dart';
 
 class AppRoutes {
   // AUTH
@@ -69,12 +77,16 @@ class AppRoutes {
   static const String driverHome = '/home/driver';
   static const String shopOwnerHome = '/home/shop-owner';
 
+  // USER PROFILE SETUP (after Google Sign-In for new users)
+  static const String userPersonalInfoSetup = '/setup/user-profile';
+
   // ADMIN PAGES
   static const String adminDriverApplicants = '/admin/drivers';
   static const String adminDriverDetail = '/admin/driver-detail';
   static const String adminShopOwnerApplicants = '/admin/shop-owners';
   static const String adminShopOwnerDetail = '/admin/shop-owner-detail';
   static const String adminManageRequests = '/admin/manage-requests';
+  static const String adminApprovedMembers = '/admin/approved-members';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -137,15 +149,56 @@ class AppRoutes {
       case adminManageRequests:
         return MaterialPageRoute(builder: (_) => const ManageRequestsPage());
 
+    // ADMIN APPROVED MEMBERS
+      case adminApprovedMembers:
+        return MaterialPageRoute(
+            builder: (_) => const AdminApprovedMembersPage());
+
     // HOME PAGES
       case adminHome:
         return MaterialPageRoute(builder: (_) => const AdminHomePage());
       case userHome:
-        return MaterialPageRoute(builder: (_) => const UserMainPage());
+        return MaterialPageRoute(
+          builder: (_) => UserTheme(
+            notifier: userThemeNotifier,
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: userThemeNotifier,
+              builder: (context, mode, child) {
+                return Theme(
+                  data: mode == ThemeMode.dark
+                      ? UserTheme.darkTheme
+                      : UserTheme.lightTheme,
+                  child: child!,
+                );
+              },
+              child: const UserMainPage(),
+            ),
+          ),
+        );
       case driverHome:
         return MaterialPageRoute(builder: (_) => DriverHomePage());
       case shopOwnerHome:
         return MaterialPageRoute(builder: (_) => const ShopOwnerHomePage());
+
+    // USER PROFILE SETUP (Google new-user onboarding)
+      case userPersonalInfoSetup:
+        return MaterialPageRoute(
+          builder: (_) => UserTheme(
+            notifier: userThemeNotifier,
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: userThemeNotifier,
+              builder: (context, mode, child) {
+                return Theme(
+                  data: mode == ThemeMode.dark
+                      ? UserTheme.darkTheme
+                      : UserTheme.lightTheme,
+                  child: child!,
+                );
+              },
+              child: const UserPersonalInfoPage(isSetupMode: true),
+            ),
+          ),
+        );
 
       default:
         return MaterialPageRoute(

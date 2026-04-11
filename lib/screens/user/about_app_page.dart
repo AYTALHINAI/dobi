@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/user_theme.dart';
 
 class AboutAppPage extends StatelessWidget {
   const AboutAppPage({super.key});
@@ -6,27 +7,27 @@ class AboutAppPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.uiBackground,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.uiBackground,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Colors.black87, size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.uiTextPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'About App',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
+            color: context.uiTextPrimary,
           ),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -35,54 +36,50 @@ class AboutAppPage extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1AE6).withValues(alpha: 0.1),
+                color: context.uiPrimary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.local_laundry_service_rounded,
                 size: 52,
-                color: Color(0xFF1A1AE6),
+                color: context.uiPrimary,
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20),
+            Text(
               'Dobbi',
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1A1AE6),
+                color: context.uiPrimary,
                 letterSpacing: 1.2,
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               'Version 1.0.0',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade500,
-              ),
+              style: TextStyle(fontSize: 13, color: context.uiTextSecondary),
             ),
-            const SizedBox(height: 36),
+            SizedBox(height: 36),
 
-            // Divider
             Container(
               width: 48,
               height: 3,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1AE6).withValues(alpha: 0.25),
+                color: context.uiPrimary.withOpacity(0.25),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 36),
+            SizedBox(height: 36),
 
             // About paragraph
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5F5FF),
+                color: context.uiPrimary.withOpacity(0.07),
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: const Text(
+              child: Text(
                 'Dobbi is a smart, on-demand laundry platform designed to make your life easier. '
                 'We connect customers with trusted local laundry shops, offering a seamless experience '
                 'from scheduling a pickup to receiving freshly cleaned clothes right at your doorstep.\n\n'
@@ -94,21 +91,17 @@ class AboutAppPage extends StatelessWidget {
                 'trust — bringing professional laundry care closer to you, every day.',
                 style: TextStyle(
                   fontSize: 14.5,
-                  color: Colors.black87,
+                  color: context.uiTextPrimary,
                   height: 1.75,
                 ),
                 textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 40),
+            SizedBox(height: 40),
 
-            // Footer
             Text(
               '© 2025 Dobbi. All rights reserved.',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade400,
-              ),
+              style: TextStyle(fontSize: 12, color: context.uiTextHint),
             ),
           ],
         ),

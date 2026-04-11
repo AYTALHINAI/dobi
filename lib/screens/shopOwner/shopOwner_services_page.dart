@@ -41,7 +41,9 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
           _shopName = data['shopName'] ?? '';
           _wilayat = data['wilayat'] ?? '';
           _governorate = data['governorate'] ?? '';
-          _shopImageUrl = data['shopImageUrl'];
+          // Use shopImageUrl first; fall back to profileImageUrl so both pages share the same photo
+          _shopImageUrl = (data['shopImageUrl'] as String?)
+              ?? (data['profileImageUrl'] as String?);
           _loadingInfo = false;
         });
       }
@@ -79,6 +81,95 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
     }
   }
 
+  Future<void> _deleteShopPhoto() async {
+    if (_uid == null) return;
+    // Confirm before deleting
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Remove Photo'),
+        content: const Text('Are you sure you want to remove the shop photo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      // Delete from Storage
+      await FirebaseStorage.instance
+          .ref()
+          .child('shopOwners/$_uid/shop_cover.jpg')
+          .delete();
+    } catch (_) {
+      // Storage file might not exist — that's fine
+    }
+    try {
+      await _db.deleteShopPhoto(_uid!);
+      if (mounted) setState(() => _shopImageUrl = null);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove photo: $e')),
+        );
+      }
+    }
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: Color(0xFF2C2C54)),
+              title: const Text('Change Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndUploadShopPhoto();
+              },
+            ),
+            if (_shopImageUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                title: const Text('Remove Photo',
+                    style: TextStyle(color: Colors.redAccent)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteShopPhoto();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,7 +188,7 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
             ),
             flexibleSpace: FlexibleSpaceBar(
               background: GestureDetector(
-                onTap: _pickAndUploadShopPhoto,
+                onTap: _showPhotoOptions,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -334,6 +425,8 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
                                               ? (price as num).toDouble()
                                               : 0.0,
                                           currentDescription: description,
+                                          currentCategory: data['category'] as String? ?? '',
+                                          currentCategoryLabel: data['categoryLabel'] as String? ?? '',
                                         );
                                       } else if (value == 'delete') {
                                         _confirmDeleteService(doc.id, name);
@@ -435,219 +528,39 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
     required String currentName,
     required double currentPrice,
     required String currentDescription,
+    required String currentCategory,
+    required String currentCategoryLabel,
   }) {
-    final formKey = GlobalKey<FormState>();
-    final nameCtrl = TextEditingController(text: currentName);
-    final priceCtrl =
-        TextEditingController(text: currentPrice.toStringAsFixed(3));
-    final descCtrl = TextEditingController(text: currentDescription);
-    bool saving = false;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: false,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            Future<void> save() async {
-              if (!formKey.currentState!.validate()) return;
-              if (_uid == null) return;
-              setSheetState(() => saving = true);
-              bool success = false;
-              try {
-                await _db.updateService(_uid!, docId, {
-                  'name': nameCtrl.text.trim(),
-                  'price':
-                      double.tryParse(priceCtrl.text.trim()) ?? currentPrice,
-                  'description': descCtrl.text.trim(),
-                });
-                success = true;
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              } finally {
-                // Only update sheet state if the sheet is still open
-                if (!success) setSheetState(() => saving = false);
-              }
-              if (success) {
-                // Pop the sheet first, then show snackbar on parent context
-                Navigator.pop(context);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Service updated!'),
-                      backgroundColor: Color(0xFF2C2C54),
-                    ),
-                  );
-                }
-              }
-            }
-
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Handle bar
-                    Center(
-                      child: Container(
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.black12,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const Text(
-                      'Edit Service',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2C2C54),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Service name
-                    const Text('Service Name',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: nameCtrl,
-                      textCapitalization: TextCapitalization.words,
-                      decoration: _sheetInputDecoration(
-                          hint: 'e.g. Regular Cleaning',
-                          icon: Icons.local_laundry_service_outlined),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Price
-                    const Text('Price (OMR)',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: priceCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      decoration: _sheetInputDecoration(
-                          hint: '0.000',
-                          icon: Icons.attach_money_outlined),
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'Required';
-                        if (double.tryParse(v.trim()) == null) {
-                          return 'Enter a valid price';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description
-                    const Text('Description (optional)',
-                        style: TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: descCtrl,
-                      maxLines: 3,
-                      textCapitalization: TextCapitalization.sentences,
-                      decoration: _sheetInputDecoration(
-                          hint: 'e.g. Includes washing and folding…',
-                          icon: Icons.notes_outlined),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Save button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: saving ? null : save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF2C2C54),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                        child: saving
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2.5),
-                              )
-                            : const Text('Save Changes',
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                  ],
+      builder: (sheetCtx) {
+        return _EditServiceSheet(
+          uid: _uid!,
+          docId: docId,
+          currentName: currentName,
+          currentPrice: currentPrice,
+          currentDescription: currentDescription,
+          currentCategory: currentCategory,
+          currentCategoryLabel: currentCategoryLabel,
+          db: _db,
+          onSuccess: () {
+            Navigator.pop(sheetCtx);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Service updated!'),
+                  backgroundColor: Color(0xFF2C2C54),
                 ),
-              ),
-            );
+              );
+            }
           },
         );
       },
-    ).whenComplete(() {
-      nameCtrl.dispose();
-      priceCtrl.dispose();
-      descCtrl.dispose();
-    });
-  }
-
-  InputDecoration _sheetInputDecoration(
-      {required String hint, required IconData icon}) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
-      prefixIcon: Icon(icon, color: const Color(0xFF2C2C54), size: 20),
-      filled: true,
-      fillColor: const Color(0xFFF5F5F7),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide:
-            const BorderSide(color: Color(0xFF2C2C54), width: 1.5),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.red, width: 1.5),
-      ),
     );
   }
 
@@ -665,6 +578,426 @@ class _ShopOwnerServicesPageState extends State<ShopOwnerServicesPage> {
               'Tap to add shop photo',
               style: TextStyle(color: Colors.white60, fontSize: 13),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Edit Service Sheet — dedicated StatefulWidget to avoid controller lifecycle
+// issues that cause the '_dependents.isEmpty' assertion crash on swipe-dismiss.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Re-use the same service catalogue and colour map from add_laundry_service_page
+class _ServiceOption {
+  final String name;
+  final String category;
+  final String categoryLabel;
+  const _ServiceOption(this.name, this.category, this.categoryLabel);
+}
+
+const _kServices = [
+  _ServiceOption('Shirt Cleaning',             'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Trouser Cleaning',           'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Suit Dry Cleaning',          'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Dress Cleaning',             'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Jacket / Coat Cleaning',     'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Abaya / Dishdasha Cleaning', 'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Sportswear Cleaning',        'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('School Uniform Cleaning',    'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('T-Shirt Cleaning',           'cloth_cleaning',   'Cloth Cleaning'),
+  _ServiceOption('Blanket Washing',            'blanket_cleaning', 'Blanket Cleaning'),
+  _ServiceOption('Bed Sheet Cleaning',         'blanket_cleaning', 'Blanket Cleaning'),
+  _ServiceOption('Duvet / Comforter Cleaning', 'blanket_cleaning', 'Blanket Cleaning'),
+  _ServiceOption('Pillow Cover Washing',       'blanket_cleaning', 'Blanket Cleaning'),
+  _ServiceOption('Curtain Cleaning',           'blanket_cleaning', 'Blanket Cleaning'),
+  _ServiceOption('Carpet Cleaning',            'blanket_cleaning', 'Blanket Cleaning'),
+];
+
+const _kCategoryColor = {
+  'cloth_cleaning':   Color(0xFF1A1AE6),
+  'blanket_cleaning': Color(0xFF2C7A4B),
+};
+
+class _EditServiceSheet extends StatefulWidget {
+  final String uid;
+  final String docId;
+  final String currentName;
+  final double currentPrice;
+  final String currentDescription;
+  final String currentCategory;
+  final String currentCategoryLabel;
+  final DatabaseService db;
+  final VoidCallback onSuccess;
+
+  const _EditServiceSheet({
+    required this.uid,
+    required this.docId,
+    required this.currentName,
+    required this.currentPrice,
+    required this.currentDescription,
+    required this.currentCategory,
+    required this.currentCategoryLabel,
+    required this.db,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_EditServiceSheet> createState() => _EditServiceSheetState();
+}
+
+class _EditServiceSheetState extends State<_EditServiceSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _priceCtrl;
+  late final TextEditingController _descCtrl;
+
+  _ServiceOption? _selectedService;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _priceCtrl = TextEditingController(
+        text: widget.currentPrice.toStringAsFixed(3));
+    _descCtrl = TextEditingController(text: widget.currentDescription);
+
+    // Pre-select the matching service option
+    try {
+      _selectedService = _kServices.firstWhere(
+        (s) => s.name == widget.currentName,
+      );
+    } catch (_) {
+      _selectedService = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _priceCtrl.dispose();
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedService == null) return;
+
+    setState(() => _saving = true);
+    try {
+      await widget.db.updateService(widget.uid, widget.docId, {
+        'name':          _selectedService!.name,
+        'category':      _selectedService!.category,
+        'categoryLabel': _selectedService!.categoryLabel,
+        'price':         double.tryParse(_priceCtrl.text.trim()) ?? widget.currentPrice,
+        'description':   _descCtrl.text.trim(),
+      });
+
+      // Rebuild categories array on the shop doc so customer filters update
+      await FirebaseFirestore.instance
+          .collection('shopOwners')
+          .doc(widget.uid)
+          .collection('services')
+          .get()
+          .then((snap) {
+        final cats = snap.docs
+            .map((d) => (d.data()['category'] as String?) ?? '')
+            .where((c) => c.isNotEmpty)
+            .toSet()
+            .toList();
+        return FirebaseFirestore.instance
+            .collection('shopOwners')
+            .doc(widget.uid)
+            .update({'categories': cats});
+      });
+
+      widget.onSuccess();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  List<DropdownMenuItem<_ServiceOption>> _buildDropdownItems() {
+    final items = <DropdownMenuItem<_ServiceOption>>[];
+    String? lastCategory;
+    for (final service in _kServices) {
+      if (service.category != lastCategory) {
+        lastCategory = service.category;
+        final headerColor =
+            _kCategoryColor[service.category] ?? const Color(0xFF2C2C54);
+        items.add(DropdownMenuItem<_ServiceOption>(
+          enabled: false,
+          value: null,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 2),
+            child: Row(
+              children: [
+                Icon(
+                  service.category == 'cloth_cleaning'
+                      ? Icons.checkroom_outlined
+                      : Icons.bed_outlined,
+                  size: 14,
+                  color: headerColor,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  service.categoryLabel.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: headerColor,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ));
+      }
+      items.add(DropdownMenuItem<_ServiceOption>(
+        value: service,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: Text(service.name,
+              style: const TextStyle(fontSize: 14, color: Colors.black87)),
+        ),
+      ));
+    }
+    return items;
+  }
+
+  InputDecoration _inputDec({required String hint, required IconData icon}) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
+        prefixIcon: Icon(icon, color: const Color(0xFF2C2C54), size: 20),
+        filled: true,
+        fillColor: const Color(0xFFF5F5F7),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide:
+                const BorderSide(color: Color(0xFF2C2C54), width: 1.5)),
+        errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+        focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Colors.red, width: 1.5)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final categoryColor = _selectedService != null
+        ? (_kCategoryColor[_selectedService!.category] ??
+            const Color(0xFF2C2C54))
+        : Colors.transparent;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Handle bar ──────────────────────────────────────────────────
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Text(
+              'Edit Service',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2C2C54),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Pick a service from the list to update it.',
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+            const SizedBox(height: 20),
+
+            // ── Service dropdown ─────────────────────────────────────────────
+            const Text('Service Name',
+                style:
+                    TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            FormField<_ServiceOption>(
+              validator: (_) =>
+                  _selectedService == null ? 'Please select a service' : null,
+              builder: (field) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: field.hasError
+                          ? Border.all(color: Colors.red, width: 1.5)
+                          : Border.all(color: Colors.transparent),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<_ServiceOption>(
+                        value: _selectedService,
+                        isExpanded: true,
+                        hint: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16),
+                          child: Text('Select a service…',
+                              style: TextStyle(
+                                  color: Colors.black38, fontSize: 14)),
+                        ),
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8),
+                        borderRadius: BorderRadius.circular(12),
+                        items: _buildDropdownItems(),
+                        onChanged: (val) =>
+                            setState(() => _selectedService = val),
+                      ),
+                    ),
+                  ),
+                  if (field.hasError)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 12),
+                      child: Text(field.errorText!,
+                          style: const TextStyle(
+                              color: Colors.red, fontSize: 12)),
+                    ),
+                ],
+              ),
+            ),
+
+            // ── Category badge ───────────────────────────────────────────────
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              child: _selectedService == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: categoryColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _selectedService!.category == 'cloth_cleaning'
+                                  ? Icons.checkroom_outlined
+                                  : Icons.bed_outlined,
+                              size: 13,
+                              color: categoryColor,
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              _selectedService!.categoryLabel,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: categoryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Price ────────────────────────────────────────────────────────
+            const Text('Price (OMR)',
+                style:
+                    TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _priceCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration:
+                  _inputDec(hint: '0.000', icon: Icons.attach_money_outlined),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Required';
+                if (double.tryParse(v.trim()) == null) {
+                  return 'Enter a valid price';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // ── Description ──────────────────────────────────────────────────
+            const Text('Description (optional)',
+                style:
+                    TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _descCtrl,
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: _inputDec(
+                  hint: 'e.g. Includes washing and folding…',
+                  icon: Icons.notes_outlined),
+            ),
+            const SizedBox(height: 24),
+
+            // ── Save button ──────────────────────────────────────────────────
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _saving ? null : _save,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2C2C54),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2.5),
+                      )
+                    : const Text('Save Changes',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w600)),
+              ),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),

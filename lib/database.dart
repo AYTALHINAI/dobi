@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../screens/auth/user/user_registration_model.dart';
 import '../screens/auth/driver/driver_registration_model.dart';
@@ -292,6 +293,26 @@ class DatabaseService {
   /// DASHBOARD COUNTS
   /// ------------------------------------------------
 
+  /// Live count of all registered users.
+  Stream<int> watchTotalUsers() => _firestore
+      .collection('users')
+      .snapshots()
+      .map((s) => s.docs.length);
+
+  /// Live count of approved drivers.
+  Stream<int> watchTotalDrivers() => _firestore
+      .collection('drivers')
+      .where('applicationStatus', isEqualTo: 'approved')
+      .snapshots()
+      .map((s) => s.docs.length);
+
+  /// Live count of approved shop owners.
+  Stream<int> watchTotalShopOwners() => _firestore
+      .collection('shopOwners')
+      .where('applicationStatus', isEqualTo: 'approved')
+      .snapshots()
+      .map((s) => s.docs.length);
+
   /// Get total count of users
   Future<int> getTotalUsers() async {
     try {
@@ -360,11 +381,18 @@ class DatabaseService {
 
   /// Save (or overwrite) the shop cover image URL on the shop owner doc.
   Future<void> updateShopCoverPhoto(String uid, String url) =>
-      _firestore.collection('shopOwners').doc(uid).update({'shopImageUrl': url});
+      _firestore.collection('shopOwners').doc(uid).update({'shopImageUrl': url, 'profileImageUrl': url});
 
   /// Save (or overwrite) the shop owner profile image URL.
   Future<void> updateShopOwnerProfileImage(String uid, String url) =>
-      _firestore.collection('shopOwners').doc(uid).update({'profileImageUrl': url});
+      _firestore.collection('shopOwners').doc(uid).update({'profileImageUrl': url, 'shopImageUrl': url});
+
+  /// Remove the shop cover photo (sets both shared image fields to null).
+  Future<void> deleteShopPhoto(String uid) =>
+      _firestore.collection('shopOwners').doc(uid).update({
+        'shopImageUrl': FieldValue.delete(),
+        'profileImageUrl': FieldValue.delete(),
+      });
 
   /// Save the shop owner's map location.
   Future<void> updateShopLocation(
@@ -373,6 +401,48 @@ class DatabaseService {
         'latitude': latitude,
         'longitude': longitude,
       });
+
+  /// Update editable shop info fields (shopPhone, shopAddress).
+  Future<void> updateShopOwnerInfo(
+          String uid, Map<String, dynamic> fields) =>
+      _firestore
+          .collection('shopOwners')
+          .doc(uid)
+          .update(fields);
+
+  /// Fetch all approved shop owners as a list of data maps.
+  Future<List<Map<String, dynamic>>> getApprovedShopOwnersList() async {
+    final snap = await _firestore
+        .collection('shopOwners')
+        .where('applicationStatus', isEqualTo: 'approved')
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['uid'] = d.id;
+      return data;
+    }).toList();
+  }
+
+  /// Fetch all approved drivers as a list of data maps.
+  Future<List<Map<String, dynamic>>> getApprovedDriversList() async {
+    final snap = await _firestore
+        .collection('drivers')
+        .where('applicationStatus', isEqualTo: 'approved')
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['uid'] = d.id;
+      return data;
+    }).toList();
+  }
+
+  /// Permanently delete a shop owner document.
+  Future<void> deleteShopOwner(String uid) =>
+      _firestore.collection('shopOwners').doc(uid).delete();
+
+  /// Permanently delete a driver document.
+  Future<void> deleteDriver(String uid) =>
+      _firestore.collection('drivers').doc(uid).delete();
 
   /// Update an existing service document.
   Future<void> updateService(
@@ -444,6 +514,13 @@ class DatabaseService {
   Future<void> updateUserProfileImage(String uid, String url) =>
       updateUserFields(uid, {'profileImageUrl': url});
 
+  /// Remove the user profile image URL from Firestore.
+  Future<void> deleteUserProfileImage(String uid) =>
+      _firestore
+          .collection('users')
+          .doc(uid)
+          .update({'profileImageUrl': FieldValue.delete()});
+
   /// Returns true if [phone] is already registered to a user OTHER than [currentUid].
   Future<bool> checkPhoneExistsForOtherUser(
       String phone, String currentUid) async {
@@ -502,6 +579,75 @@ class DatabaseService {
           .delete();
 
   /// Delete every item in the cart (batch for atomicity).
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GOOGLE SIGN-IN  (Customer / User role only)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Signs in with Google and returns:
+  ///   `"new"`      – first time; a minimal Firestore user doc is created.
+  ///   `"existing"` – returning user; Firestore doc already present.
+  /// Throws a human-readable string on failure or cancellation.
+  Future<String> signInWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+
+      // Always sign out first to clear the cached account so the
+      // account picker is shown every time (prevents silent re-login).
+      await googleSignIn.signOut();
+
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        throw 'Google sign-in was cancelled.';
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+      final User firebaseUser = userCredential.user!;
+
+      // Check whether the user doc already exists in Firestore
+      final docRef = _firestore.collection('users').doc(firebaseUser.uid);
+      final docSnap = await docRef.get();
+
+      if (!docSnap.exists) {
+        // New user — create a minimal document; profile will be completed next
+        await docRef.set({
+          'uid': firebaseUser.uid,
+          'role': 'user',
+          'isAdmin': false,
+          'email': firebaseUser.email ?? '',
+          'fullName': firebaseUser.displayName ?? '',
+          'displayName': firebaseUser.displayName ?? '',
+          'profileImageUrl': firebaseUser.photoURL ?? '',
+          'isNewGoogleUser': true,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        return 'new';
+      }
+
+      return 'existing';
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          throw 'This email is already registered with a different sign-in method.';
+        case 'network-request-failed':
+          throw 'Network error. Please check your connection.';
+        default:
+          throw 'Google sign-in failed. Please try again.';
+      }
+    } catch (e) {
+      throw e.toString();
+    }
+  }
+
   Future<void> clearCart(String uid) async {
     final snap = await _firestore
         .collection('users')

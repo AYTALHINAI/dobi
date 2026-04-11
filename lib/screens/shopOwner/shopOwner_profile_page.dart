@@ -33,7 +33,13 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
   bool _loading = true;
   bool _savingLocation = false;
   bool _uploadingPhoto = false;
+  bool _savingInfo = false;
   final _db = DatabaseService();
+
+  // ── Form key & controllers for edit bottom sheet ───────────────────────────
+  final _editFormKey = GlobalKey<FormState>();
+  late final TextEditingController _phoneCtrl = TextEditingController();
+  late final TextEditingController _addressCtrl = TextEditingController();
 
   final String? _uid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -41,6 +47,13 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
   void initState() {
     super.initState();
     _loadShopInfo();
+  }
+
+  @override
+  void dispose() {
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _loadShopInfo() async {
@@ -59,7 +72,9 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
           _wilayat = data['wilayat'] ?? '';
           _latitude = (data['latitude'] as num?)?.toDouble();
           _longitude = (data['longitude'] as num?)?.toDouble();
-          _profileImageUrl = data['profileImageUrl'];
+          // Use profileImageUrl first; fall back to shopImageUrl so both pages share the same photo
+          _profileImageUrl = (data['profileImageUrl'] as String?)
+              ?? (data['shopImageUrl'] as String?);
           _loading = false;
         });
       }
@@ -99,6 +114,322 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
     }
+  }
+
+  Future<void> _deleteProfilePhoto() async {
+    if (_uid == null) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Remove Profile Photo'),
+        content: const Text('Are you sure you want to remove the profile photo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await FirebaseStorage.instance
+          .ref()
+          .child('shopOwners/$_uid/profile_photo.jpg')
+          .delete();
+    } catch (_) {
+      // File may not exist in storage
+    }
+    try {
+      await _db.deleteShopPhoto(_uid);
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = null;
+          _pickedImage = null;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to remove photo: $e')),
+        );
+      }
+    }
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.black12,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined,
+                  color: Color(0xFF2C2C54)),
+              title: const Text('Change Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+            ),
+            if (_profileImageUrl != null)
+              ListTile(
+                leading: const Icon(Icons.delete_outline,
+                    color: Colors.redAccent),
+                title: const Text('Remove Photo',
+                    style: TextStyle(color: Colors.redAccent)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _deleteProfilePhoto();
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Edit shop info bottom sheet ────────────────────────────────────────────
+  Future<void> _openEditShopInfo() async {
+    // Pre-fill controllers with current values
+    _phoneCtrl.text = _shopPhone;
+    _addressCtrl.text = _shopAddress;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+        ),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: StatefulBuilder(
+            builder: (ctx, setSheetState) {
+              return Form(
+                key: _editFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      'Edit Shop Information',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2C2C54),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Shop Phone ──────────────────────────────────────────
+                    TextFormField(
+                      controller: _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      decoration: _inputDecoration(
+                        label: 'Shop Phone Number',
+                        icon: Icons.phone_outlined,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Enter shop phone number';
+                        }
+                        if (!RegExp(r'^[0-9]+$').hasMatch(v.trim())) {
+                          return 'Phone must contain numbers only';
+                        }
+                        if (v.trim().length != 8) {
+                          return 'Phone number must be exactly 8 digits';
+                        }
+                        if (!v.trim().startsWith('9') &&
+                            !v.trim().startsWith('7')) {
+                          return 'Phone number must start with 7 or 9';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Shop Address ────────────────────────────────────────
+                    TextFormField(
+                      controller: _addressCtrl,
+                      keyboardType: TextInputType.number,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      decoration: _inputDecoration(
+                        label: 'Shop/Building Number (Optional)',
+                        icon: Icons.home_work_outlined,
+                      ),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return null;
+                        if (!RegExp(r'^\d+$').hasMatch(v.trim())) {
+                          return 'Building number must contain only digits';
+                        }
+                        if (v.trim().length > 6) {
+                          return 'Building number cannot exceed 6 digits';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 28),
+
+                    // ── Save button ─────────────────────────────────────────
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _savingInfo
+                            ? null
+                            : () async {
+                                if (!_editFormKey.currentState!.validate()) {
+                                  return;
+                                }
+                                if (_uid == null) return;
+
+                                setSheetState(() => _savingInfo = true);
+                                setState(() => _savingInfo = true);
+
+                                try {
+                                  final newPhone = _phoneCtrl.text.trim();
+                                  final newAddress = _addressCtrl.text.trim();
+
+                                  await _db.updateShopOwnerInfo(_uid, {
+                                    'shopPhone': newPhone,
+                                    'shopAddress': newAddress,
+                                  });
+
+                                  if (mounted) {
+                                    setState(() {
+                                      _shopPhone = newPhone;
+                                      _shopAddress = newAddress;
+                                    });
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Shop info updated!'),
+                                        backgroundColor: Color(0xFF2C2C54),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              'Failed to save: $e')),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setSheetState(() => _savingInfo = false);
+                                    setState(() => _savingInfo = false);
+                                  }
+                                }
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2C2C54),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _savingInfo
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2.5),
+                              )
+                            : const Text(
+                                'Save Changes',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      prefixIcon: Icon(icon, color: const Color(0xFF2C2C54), size: 20),
+      labelText: label,
+      labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding:
+          const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide:
+            const BorderSide(color: Color(0xFF2C2C54), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red, width: 1.5),
+      ),
+    );
   }
 
   // ── Location picker ────────────────────────────────────────────────────────
@@ -160,7 +491,7 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: _pickImage,
+                          onTap: _showPhotoOptions,
                           child: Stack(
                             children: [
                               Container(
@@ -269,14 +600,46 @@ class _ShopOwnerProfilePageState extends State<ShopOwnerProfilePage> {
                     const SizedBox(height: 20),
 
                     // ── Shop Details ──────────────────────────────────────
-                    const Text(
-                      'Shop Information',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black45,
-                        letterSpacing: 0.8,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Shop Information',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black45,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: _openEditShopInfo,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2C2C54).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.edit_outlined,
+                                    size: 13, color: Color(0xFF2C2C54)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Edit',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2C2C54),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
 

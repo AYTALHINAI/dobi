@@ -1,3 +1,4 @@
+import '../../theme/user_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -33,11 +34,6 @@ class _UserBookingPageState extends State<UserBookingPage> {
 
   bool _addingToCart = false;
 
-  // Transport
-  TransportOption _transport = TransportOption.none;
-
-  static const double _kTransportFee = 0.500; // per leg
-
   double get _servicesTotal {
     double total = 0;
     _serviceQuantities.forEach((id, qty) {
@@ -45,20 +41,6 @@ class _UserBookingPageState extends State<UserBookingPage> {
     });
     return total;
   }
-
-  double get _transportTotal {
-    switch (_transport) {
-      case TransportOption.pickup:
-      case TransportOption.delivery:
-        return _kTransportFee;
-      case TransportOption.both:
-        return _kTransportFee * 2;
-      case TransportOption.none:
-        return 0;
-    }
-  }
-
-  double get _grandTotal => _servicesTotal + _transportTotal;
 
   @override
   Widget build(BuildContext context) {
@@ -70,23 +52,23 @@ class _UserBookingPageState extends State<UserBookingPage> {
     final imageUrl = widget.shopData['shopImageUrl'] as String?;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.uiBackground,
       body: CustomScrollView(
         slivers: [
           // ── Hero banner ───────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
-            backgroundColor: const Color(0xFF1A1AE6),
+            backgroundColor: context.uiPrimary,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
-                margin: const EdgeInsets.all(8),
+                margin: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new_rounded,
+                child: Icon(Icons.arrow_back_ios_new_rounded,
                     size: 16, color: Colors.white),
               ),
             ),
@@ -99,8 +81,8 @@ class _UserBookingPageState extends State<UserBookingPage> {
                       imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
-                        color: const Color(0xFF1A1AE6),
-                        child: const Icon(
+                        color: context.uiPrimary,
+                        child: Icon(
                             Icons.store_mall_directory_outlined,
                             color: Colors.white24,
                             size: 80),
@@ -108,16 +90,16 @@ class _UserBookingPageState extends State<UserBookingPage> {
                     )
                   else
                     Container(
-                      color: const Color(0xFF1A1AE6),
-                      child: const Icon(Icons.store_mall_directory_outlined,
+                      color: context.uiPrimary,
+                      child: Icon(Icons.store_mall_directory_outlined,
                           color: Colors.white24, size: 80),
                     ),
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Colors.black54],
+                        colors: [Colors.transparent, context.uiTextSecondary],
                       ),
                     ),
                   ),
@@ -129,20 +111,20 @@ class _UserBookingPageState extends State<UserBookingPage> {
           // ── Shop header strip ──────────────────────────────────────────
           SliverToBoxAdapter(
             child: Container(
-              color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              color: context.uiSurface,
+              padding: EdgeInsets.fromLTRB(20, 18, 20, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     shopName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
-                      color: Colors.black87,
+                      color: context.uiTextPrimary,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Wrap(
                     spacing: 14,
                     runSpacing: 6,
@@ -157,8 +139,8 @@ class _UserBookingPageState extends State<UserBookingPage> {
                             label: widget.shopData['shopPhone'].toString()),
                     ],
                   ),
-                  const SizedBox(height: 20),
-                  const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                  SizedBox(height: 20),
+                  Divider(height: 1, color: context.uiDivider),
                 ],
               ),
             ),
@@ -167,13 +149,13 @@ class _UserBookingPageState extends State<UserBookingPage> {
           // ── Select Services ────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: const Text(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Text(
                 'Select Services',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    color: Colors.black87),
+                    color: context.uiTextPrimary),
               ),
             ),
           ),
@@ -208,74 +190,72 @@ class _UserBookingPageState extends State<UserBookingPage> {
           SliverToBoxAdapter(
             child: Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: const Divider(height: 1, color: Color(0xFFEEEEEE)),
-            ),
-          ),
-
-          // ── Transport ──────────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-              child: const Text(
-                'Transport',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87),
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: _TransportRadioGroup(
-              value: _transport,
-              onChanged: (v) => setState(() => _transport = v),
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Divider(height: 1, color: context.uiDivider),
             ),
           ),
 
           // ── Price Summary ─────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
               child: Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F6),
+                  color: context.uiFill,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _PriceLine(
-                        label: 'Services', value: _servicesTotal),
-                    const SizedBox(height: 6),
-                    _PriceLine(
-                        label: 'Transport', value: _transportTotal),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 10),
-                      child:
-                          Divider(height: 1, color: Color(0xFFDDDDDD)),
+                    Text(
+                      'Services Total',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: context.uiTextSecondary,
+                      ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        Text(
-                          '${_grandTotal.toStringAsFixed(3)} OMR',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1AE6),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      '${_servicesTotal.toStringAsFixed(3)} OMR',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: context.uiPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Transport note ────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: context.uiPrimary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: context.uiPrimary.withValues(alpha: 0.25)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.local_shipping_outlined,
+                        size: 16, color: context.uiPrimary),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Transport options can be selected in your cart.',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: context.uiTextSecondary,
+                            fontWeight: FontWeight.w500),
+                      ),
                     ),
                   ],
                 ),
@@ -289,27 +269,27 @@ class _UserBookingPageState extends State<UserBookingPage> {
 
       // ── Add to Cart button ─────────────────────────────────────────────────
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        padding: EdgeInsets.fromLTRB(20, 12, 20, 24),
         child: SizedBox(
           height: 52,
           child: ElevatedButton(
             onPressed: _addingToCart ? null : _addToCart,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1A1AE6),
+              backgroundColor: context.uiPrimary,
               foregroundColor: Colors.white,
               disabledBackgroundColor:
-                  const Color(0xFF1A1AE6).withValues(alpha: 0.5),
+                  context.uiPrimary.withValues(alpha: 0.5),
               elevation: 0,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
             ),
             child: _addingToCart
-                ? const SizedBox(
+                ? SizedBox(
                     width: 22,
                     height: 22,
                     child: CircularProgressIndicator(
                         color: Colors.white, strokeWidth: 2.5))
-                : const Row(
+                : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.add_shopping_cart_outlined, size: 20),
@@ -339,9 +319,9 @@ class _UserBookingPageState extends State<UserBookingPage> {
         .toList();
     if (selected.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please select at least one service.'),
-          backgroundColor: Colors.black87,
+          backgroundColor: context.uiTextPrimary,
           behavior: SnackBarBehavior.floating,
           margin: EdgeInsets.all(16),
           shape: RoundedRectangleBorder(
@@ -366,21 +346,21 @@ class _UserBookingPageState extends State<UserBookingPage> {
             builder: (ctx) => AlertDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
-              title: const Text('Replace Cart?',
+              title: Text('Replace Cart?',
                   style: TextStyle(fontWeight: FontWeight.w800)),
-              content: const Text(
+              content: Text(
                   'Your cart contains items from another shop. Adding these items will clear your current cart.'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Keep current',
-                      style: TextStyle(color: Colors.black54)),
+                  child: Text('Keep current',
+                      style: TextStyle(color: context.uiTextSecondary)),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Replace',
+                  child: Text('Replace',
                       style: TextStyle(
-                          color: Color(0xFF1A1AE6),
+                          color: context.uiPrimary,
                           fontWeight: FontWeight.w700)),
                 ),
               ],
@@ -420,7 +400,7 @@ class _UserBookingPageState extends State<UserBookingPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
               Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
               SizedBox(width: 8),
@@ -429,9 +409,9 @@ class _UserBookingPageState extends State<UserBookingPage> {
                       style: TextStyle(fontWeight: FontWeight.w600))),
             ],
           ),
-          backgroundColor: const Color(0xFF1A1AE6),
+          backgroundColor: context.uiPrimary,
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
+          margin: EdgeInsets.all(16),
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(10))),
           action: SnackBarAction(
@@ -439,7 +419,7 @@ class _UserBookingPageState extends State<UserBookingPage> {
             textColor: Colors.white,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const UserCartPage()),
+              userPageRoute((_) => const UserCartPage()),
             ),
           ),
         ),
@@ -452,7 +432,7 @@ class _UserBookingPageState extends State<UserBookingPage> {
           content: Text('Failed to add to cart: $e'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(16),
+          margin: EdgeInsets.all(16),
           shape: const RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(10))),
         ),
@@ -487,11 +467,11 @@ class _ServicesList extends StatelessWidget {
       stream: stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: 20),
             child: Center(
                 child: CircularProgressIndicator(
-                    color: Color(0xFF1A1AE6))),
+                    color: context.uiPrimary)),
           );
         }
 
@@ -500,24 +480,24 @@ class _ServicesList extends StatelessWidget {
         if (docs.isEmpty) {
           return Padding(
             padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF4F4F6),
+                color: context.uiFill,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.info_outline_rounded,
-                      size: 18, color: Colors.black38),
+                      size: 18, color: context.uiTextHint),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'Services will be added soon by the shop owner.',
                       style: TextStyle(
                           fontSize: 13,
-                          color: Colors.black45,
+                          color: context.uiTextSecondary,
                           height: 1.4),
                     ),
                   ),
@@ -537,7 +517,7 @@ class _ServicesList extends StatelessWidget {
             final lineTotal = qty * unitPrice;
 
             return Padding(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                   horizontal: 20, vertical: 10),
               child: Row(
                 children: [
@@ -550,23 +530,23 @@ class _ServicesList extends StatelessWidget {
                       height: 22,
                       decoration: BoxDecoration(
                         color: isChecked
-                            ? const Color(0xFF1A1AE6)
+                            ? context.uiPrimary
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: isChecked
-                              ? const Color(0xFF1A1AE6)
-                              : Colors.black26,
+                              ? context.uiPrimary
+                              : context.uiTextHint,
                           width: 2,
                         ),
                       ),
                       child: isChecked
-                          ? const Icon(Icons.check_rounded,
+                          ? Icon(Icons.check_rounded,
                               size: 14, color: Colors.white)
                           : null,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
 
                   // ── Service name + price info ──
                   Expanded(
@@ -582,13 +562,13 @@ class _ServicesList extends StatelessWidget {
                               fontWeight: isChecked
                                   ? FontWeight.w700
                                   : FontWeight.w500,
-                              color: Colors.black87,
+                              color: context.uiTextPrimary,
                             ),
                           ),
                           Text(
                             '${unitPrice.toStringAsFixed(3)} OMR / item',
-                            style: const TextStyle(
-                                fontSize: 11, color: Colors.black38),
+                            style: TextStyle(
+                                fontSize: 11, color: context.uiTextHint),
                           ),
                         ],
                       ),
@@ -604,13 +584,13 @@ class _ServicesList extends StatelessWidget {
                               // line total
                               Text(
                                 '${lineTotal.toStringAsFixed(3)} OMR',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1A1AE6),
+                                  color: context.uiPrimary,
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              SizedBox(width: 10),
                               // minus
                               _QtyBtn(
                                 icon: Icons.remove,
@@ -623,10 +603,10 @@ class _ServicesList extends StatelessWidget {
                                 alignment: Alignment.center,
                                 child: Text(
                                   '$qty',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.black87,
+                                    color: context.uiTextPrimary,
                                   ),
                                 ),
                               ),
@@ -639,7 +619,7 @@ class _ServicesList extends StatelessWidget {
                               ),
                             ],
                           )
-                        : const SizedBox.shrink(),
+                        : SizedBox.shrink(),
                   ),
                 ],
               ),
@@ -721,7 +701,7 @@ class _TransportRadioTile extends StatelessWidget {
       onTap: () => onChanged(option),
       child: Padding(
         padding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+            EdgeInsets.symmetric(horizontal: 20, vertical: 11),
         child: Row(
           children: [
             Expanded(
@@ -735,13 +715,13 @@ class _TransportRadioTile extends StatelessWidget {
                       fontWeight: isSelected
                           ? FontWeight.w700
                           : FontWeight.w500,
-                      color: Colors.black87,
+                      color: context.uiTextPrimary,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.black38),
+                    style: TextStyle(
+                        fontSize: 11, color: context.uiTextHint),
                   ),
                 ],
               ),
@@ -754,17 +734,17 @@ class _TransportRadioTile extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: isSelected
-                    ? const Color(0xFF1A1AE6)
+                    ? context.uiPrimary
                     : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF1A1AE6)
-                      : Colors.black26,
+                      ? context.uiPrimary
+                      : context.uiTextHint,
                   width: 2,
                 ),
               ),
               child: isSelected
-                  ? const Icon(Icons.circle, size: 10, color: Colors.white)
+                  ? Icon(Icons.circle, size: 10, color: Colors.white)
                   : null,
             ),
           ],
@@ -795,13 +775,13 @@ class _QtyBtn extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: active
-              ? const Color(0xFF1A1AE6)
-              : const Color(0xFFEEEEEE),
+              ? context.uiPrimary
+              : context.uiDivider,
           borderRadius: BorderRadius.circular(7),
         ),
         child: Icon(icon,
             size: 13,
-            color: active ? Colors.white : Colors.black26),
+            color: active ? Colors.white : context.uiTextHint),
       ),
     );
   }
@@ -817,13 +797,13 @@ class _InfoChip extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF1A1AE6)),
-        const SizedBox(width: 4),
+        Icon(icon, size: 14, color: context.uiPrimary),
+        SizedBox(width: 4),
         Flexible(
           child: Text(
             label,
             style:
-                const TextStyle(fontSize: 12, color: Colors.black54),
+                TextStyle(fontSize: 12, color: context.uiTextSecondary),
             overflow: TextOverflow.ellipsis,
           ),
         ),
@@ -844,13 +824,13 @@ class _PriceLine extends StatelessWidget {
       children: [
         Text(label,
             style:
-                const TextStyle(fontSize: 13, color: Colors.black54)),
+                TextStyle(fontSize: 13, color: context.uiTextSecondary)),
         Text(
           '${value.toStringAsFixed(3)} OMR',
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Colors.black87),
+              color: context.uiTextPrimary),
         ),
       ],
     );

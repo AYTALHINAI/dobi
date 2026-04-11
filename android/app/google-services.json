@@ -13,7 +13,20 @@
           "package_name": "com.example.dobi"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "671147613824-qgh43io5v9ub076qmukdrvgb23kt6986.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dobi",
+            "certificate_hash": "2e41d3a2aa95ea745c0a34cb145ed6574665cb65"
+          }
+        },
+        {
+          "client_id": "671147613824-nhcc5tnrojf8n0o9e4bth89uc9laebhg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBLBjQ5s9D85_P8vt7OpJTyTVMYKM01fIk"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "671147613824-nhcc5tnrojf8n0o9e4bth89uc9laebhg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

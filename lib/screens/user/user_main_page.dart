@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/user_theme.dart';
 import 'user_home_page.dart';
 import 'user_orders_page.dart';
 import 'user_account_page.dart';
@@ -12,12 +13,18 @@ class UserMainPage extends StatefulWidget {
 
 class _UserMainPageState extends State<UserMainPage> {
   int _currentIndex = 0;
+
   // Incremented every time the user taps the Home tab so that
   // _NearbyShopsSection is forced to re-fetch with the latest wilayat.
   int _homeRefreshKey = 0;
 
   @override
   Widget build(BuildContext context) {
+    // Listen to the UserTheme notifier so BottomNavigationBar reacts
+    // immediately when dark mode is toggled on the Account tab.
+    final themeNotifier = UserTheme.of(context);
+    final isDark = themeNotifier.isDark;
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -38,14 +45,14 @@ class _UserMainPageState extends State<UserMainPage> {
             _currentIndex = i;
           });
         },
-        selectedItemColor: const Color(0xFF1A1AE6),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: context.uiPrimary,
+        unselectedItemColor: context.uiTextSecondary,
         selectedLabelStyle: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
         unselectedLabelStyle: const TextStyle(fontSize: 11),
-        backgroundColor: Colors.white,
+        backgroundColor: context.uiSurface,
         elevation: 12,
         type: BottomNavigationBarType.fixed,
         items: const [

@@ -48,6 +48,27 @@ class _LoginPageState extends State<LoginPage> {
 
 
 
+  Future<void> loginWithGoogle() async {
+    setState(() => isLoading = true);
+    try {
+      final result = await dbService.signInWithGoogle();
+      if (!mounted) return;
+      if (result == 'new') {
+        Navigator.pushReplacementNamed(context, AppRoutes.userPersonalInfoSetup);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.userHome);
+      }
+    } catch (e) {
+      String message = e.toString().replaceAll('Exception:', '').trim();
+      if (message != 'Google sign-in was cancelled.') {
+        showNotification(message);
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+
   Future<void> login() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => isLoading = true);
@@ -348,7 +369,66 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
 
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 24),
+
+                              // OR DIVIDER
+                              Row(
+                                children: [
+                                  Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                                    child: Text(
+                                      'OR',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey.shade400,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+                                ],
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // GOOGLE SIGN-IN BUTTON
+                              SizedBox(
+                                width: double.infinity,
+                                height: 52,
+                                child: OutlinedButton(
+                                  onPressed: isLoading ? null : loginWithGoogle,
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(color: Colors.grey.shade300, width: 1.5),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        'assets/google.png',
+                                        height: 22,
+                                        width: 22,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Continue with Google',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blueGrey.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 24),
 
                               // REGISTER LINK
                               Row(
@@ -370,7 +450,7 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 32),
                             ],
                           ),
                         ),
