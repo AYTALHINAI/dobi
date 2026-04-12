@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "671147613824-9abe35tm0rqaqpjs3ndj5ofrnn706pha.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.dobi",
+            "certificate_hash": "2a92f5de35b02eb19c7ba6605835c01946c08580"
+          }
+        },
+        {
           "client_id": "671147613824-qgh43io5v9ub076qmukdrvgb23kt6986.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
