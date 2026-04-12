@@ -6,6 +6,7 @@ import 'shopOwner_orders_page.dart';
 import 'shopOwner_profile_page.dart';
 import 'shopOwner_services_page.dart';
 import 'add_laundry_service_page.dart';
+import 'shopOwner_feedback_page.dart';
 
 class ShopOwnerHomePage extends StatefulWidget {
   const ShopOwnerHomePage({super.key});
@@ -115,7 +116,7 @@ class _DashboardBody extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: 'Orders',
-                    value: '9',
+                    value: '-',
                     color: const Color(0xFF7B7FD4),
                     icon: Icons.list_alt_rounded,
                   ),
@@ -124,7 +125,7 @@ class _DashboardBody extends StatelessWidget {
                 Expanded(
                   child: _StatCard(
                     label: 'Customers',
-                    value: '30',
+                    value: '-',
                     color: const Color(0xFFF5A623),
                     icon: Icons.people_alt_rounded,
                   ),
@@ -134,7 +135,7 @@ class _DashboardBody extends StatelessWidget {
             const SizedBox(height: 14),
 
             // Rate card
-            const _RateCard(rate: 4, value: '5'),
+            const _RateCard(rate: 0, value: '-'),
 
             const SizedBox(height: 36),
 
@@ -142,7 +143,14 @@ class _DashboardBody extends StatelessWidget {
             _ActionButton(
               icon: Icons.thumb_down_alt_outlined,
               label: 'View Feedback',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ShopOwnerFeedbackPage(),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 14),
             _ActionButton(

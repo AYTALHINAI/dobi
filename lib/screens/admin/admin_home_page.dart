@@ -83,16 +83,6 @@ class AdminHomePage extends StatelessWidget {
 
             // ── Navigation buttons ─────────────────────────────────────────
             _NavButton(
-              title: 'Manage users & feedbacks',
-              icon: Icons.person_search,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Coming soon!'),
-                    duration: Duration(seconds: 2)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _NavButton(
               title: 'Manage drivers & requests',
               icon: Icons.delivery_dining,
               onTap: () =>
@@ -105,16 +95,7 @@ class AdminHomePage extends StatelessWidget {
               onTap: () =>
                   Navigator.pushNamed(context, AppRoutes.adminApprovedMembers),
             ),
-            // const SizedBox(height: 12),
-            // _NavButton(
-            //   title: 'View System Logs',
-            //   icon: Icons.settings,
-            //   onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            //     const SnackBar(
-            //         content: Text('Coming soon!'),
-            //         duration: Duration(seconds: 2)),
-            //   ),
-            // ),
+
           ],
         ),
       ),

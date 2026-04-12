@@ -51,3 +51,5 @@ asdASD123
 # testing commands 
 flutter test test/forgot_password_validation_test.dart
 flutter test test/login_validation_test.dart
+flutter test test/add_laundry_service_validation_test.dart
+flutter test test/edit_service_validation_test.dart
