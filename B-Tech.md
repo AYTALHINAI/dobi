@@ -47,3 +47,7 @@ asdASD123
 # Driver
 driver1@gmail.com
 asdASD123
+
+# testing commands 
+flutter test test/forgot_password_validation_test.dart
+flutter test test/login_validation_test.dart

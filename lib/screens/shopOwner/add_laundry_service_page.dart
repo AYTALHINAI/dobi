@@ -4,6 +4,23 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../database.dart';
 
+// ─── Validators (extracted for unit-testability) ──────────────────────────────
+class AddLaundryServiceValidators {
+  /// Returns an error string if [value] is not a valid OMR price, null otherwise.
+  static String? validatePrice(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Required';
+    final p = double.tryParse(value.trim());
+    if (p == null || p < 0) return 'Enter a valid price';
+    return null;
+  }
+
+  /// Returns an error string if no service has been selected, null otherwise.
+  static String? validateServiceSelected(bool isSelected) {
+    if (!isSelected) return 'Please select a service';
+    return null;
+  }
+}
+
 // ─── Service catalogue ────────────────────────────────────────────────────────
 // Each entry maps a display name → its category key.
 // Categories: 'cloth_cleaning' | 'blanket_cleaning'

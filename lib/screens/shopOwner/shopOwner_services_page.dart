@@ -6,6 +6,22 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../database.dart';
 
+// ─── Validators (extracted for unit-testability) ──────────────────────────────
+class EditServiceValidators {
+  /// Returns an error string if [value] is not a valid OMR price, null otherwise.
+  static String? validatePrice(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Required';
+    if (double.tryParse(value.trim()) == null) return 'Enter a valid price';
+    return null;
+  }
+
+  /// Returns an error string if no service has been selected, null otherwise.
+  static String? validateServiceSelected(bool isSelected) {
+    if (!isSelected) return 'Please select a service';
+    return null;
+  }
+}
+
 class ShopOwnerServicesPage extends StatefulWidget {
   const ShopOwnerServicesPage({super.key});
 

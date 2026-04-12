@@ -398,7 +398,14 @@ class _UserBookingPageState extends State<UserBookingPage> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+
+      // Capture navigator before popping so the SnackBar action still works
+      final nav = Navigator.of(context);
+      final messenger = ScaffoldMessenger.of(context);
+
+      nav.pop(); // pop the booking page first
+
+      messenger.showSnackBar(
         SnackBar(
           content: Row(
             children: [
@@ -417,14 +424,12 @@ class _UserBookingPageState extends State<UserBookingPage> {
           action: SnackBarAction(
             label: 'View Cart',
             textColor: Colors.white,
-            onPressed: () => Navigator.push(
-              context,
+            onPressed: () => nav.push(
               userPageRoute((_) => const UserCartPage()),
             ),
           ),
         ),
       );
-      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
