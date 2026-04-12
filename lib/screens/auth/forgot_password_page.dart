@@ -139,7 +139,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               backgroundColor: Colors.white.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.white, size: 21),
                                 onPressed: () {
                                   // Close keyboard smoothly first
                                   FocusScope.of(context).unfocus();

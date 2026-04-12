@@ -150,7 +150,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 31),
 
                     // WHITE CARD CONTENT
                     Expanded(

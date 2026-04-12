@@ -87,7 +87,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              radius: 22,
+                              radius: 21,
                               backgroundColor: Colors.white.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,

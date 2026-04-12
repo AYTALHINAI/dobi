@@ -210,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 41),
 
                     // LOGIN FORM CARD
                     Expanded(
