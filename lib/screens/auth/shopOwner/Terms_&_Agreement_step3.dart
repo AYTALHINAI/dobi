@@ -19,8 +19,8 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    const Color primaryDeep = Color(0xFF1A237E);
-    const Color primaryLight = Color(0xFF3949AB);
+    const Color primaryDeep = Color(0xFFFFFFFF);
+    const Color primaryLight = Color(0xFFFFFFFF);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -71,10 +71,10 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   Navigator.pushReplacementNamed(
                                     context,
@@ -95,7 +95,7 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                           Icon(
                             Icons.article_rounded,
                             size: 40,
-                            color: Colors.white,
+                            color: Color(0xFF1A237E),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -103,7 +103,7 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 2,
                             ),
                           ),
@@ -112,7 +112,7 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                             'Terms & Confirm',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),
                           ),
@@ -155,7 +155,7 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: primaryDeep,
+                                color: Color(0xFF1A237E),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -248,7 +248,7 @@ By using the Platform, the Shop Owner confirms acceptance of these Terms & Agree
                               children: [
                                 Checkbox(
                                   value: isAgreed,
-                                  activeColor: primaryDeep,
+                                  activeColor:Color(0xFF1A237E),
                                   onChanged: (val) {
                                     setState(() => isAgreed = val ?? false);
                                   },
@@ -271,7 +271,7 @@ By using the Platform, the Shop Owner confirms acceptance of these Terms & Agree
                               child: ElevatedButton(
                                 onPressed: (isAgreed && !isSubmitting) ? _submitRegistration : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryDeep,
+                                  backgroundColor: Color(0xFF1A237E),
                                   foregroundColor: Colors.white,
                                   disabledBackgroundColor: Colors.grey.shade300,
                                   elevation: 8,

@@ -36,8 +36,8 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
     final size = MediaQuery.of(context).size;
 
     // Premium Color Palette
-    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
-    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    const Color primaryDeep = Color(0xFFFFFFFF); // Deep Indigo
+    const Color primaryLight = Color(0xFFFFFFFF); // Lighter Indigo
     
     return Scaffold(
       backgroundColor: Colors.white,
@@ -88,10 +88,10 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                           children: [
                             CircleAvatar(
                               radius: 21,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
                                   Navigator.pushReplacementNamed(context, AppRoutes.register);
@@ -109,7 +109,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                           Icon(
                             Icons.person_add_rounded,
                             size: 40,
-                            color: Colors.white,
+                            color: Color(0xFF1A237E),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -117,7 +117,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 2,
                             ),
                           ),
@@ -126,7 +126,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                             'Personal Info',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),
                           ),
@@ -253,7 +253,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryDeep,
+                                    backgroundColor: Color(0xFF1A237E),
                                     foregroundColor: Colors.white,
                                     elevation: 8,
                                     shadowColor: primaryDeep.withOpacity(0.4),

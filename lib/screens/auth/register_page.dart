@@ -51,8 +51,8 @@ class _RegisterPageState extends State<RegisterPage> {
     final size = MediaQuery.of(context).size;
 
     // Premium Color Palette
-    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
-    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    const Color primaryDeep = Color(0xFFFFFFFF); // Deep Indigo
+    const Color primaryLight = Color(0xFFFFFFFF); // Lighter Indigo
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -115,10 +115,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   Navigator.pushReplacementNamed(context, AppRoutes.login);
                                 },
@@ -129,24 +129,10 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.local_shipping_rounded,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'DOBBIE',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 4,
-                            ),
-                          ),
+                          Image.asset('assets/logo.png',width: 175, height: 175),
                         ],
                       ),
                     ),
@@ -239,32 +225,32 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ),
                                 child: _isGoogleLoading
                                     ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.blueGrey.shade700,
-                                        ),
-                                      )
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.blueGrey.shade700,
+                                  ),
+                                )
                                     : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Image.asset(
-                                            'assets/google.png',
-                                            height: 20,
-                                            width: 20,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            'Sign up as User with Google',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.blueGrey.shade800,
-                                            ),
-                                          ),
-                                        ],
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Image.asset(
+                                      'assets/google.png',
+                                      height: 20,
+                                      width: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Text(
+                                      'Sign up as User with Google',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.blueGrey.shade800,
                                       ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
 

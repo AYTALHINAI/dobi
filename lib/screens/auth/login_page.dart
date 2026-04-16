@@ -118,10 +118,10 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     // Using simple size to avoid complex rebuilds/focus loss
     final size = MediaQuery.of(context).size;
-    
+
     // Premium Color Palette
-    const Color primaryDeep = Color(0xFF1A237E); // Deep Indigo
-    const Color primaryLight = Color(0xFF3949AB); // Lighter Indigo
+    const Color primaryDeep = Color(0xFFFFFFFF); // Deep Indigo
+    const Color primaryLight = Color(0xFFFFFFFF); // Lighter Indigo
     const Color accentColor = Color(0xFF5C6BC0);
 
     return Scaffold(
@@ -143,7 +143,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-          
+
           // Decorative Circles
           Positioned(
             top: -50,
@@ -179,34 +179,13 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     // LOGO AREA
                     SizedBox(height: size.height * 0.1), // Top spacing
-                    const Center(
+                    Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                              Icons.local_shipping_rounded,
-                              size: 48,
-                              color: Colors.white,
-                            ),
-                          SizedBox(height: 16),
-                          Text(
-                            'DOBBIE',
-                            style: TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 4,
-                            ),
+                          Image.asset('assets/logo.png'
+                            ,width: 175, height: 175,
                           ),
-                          // SizedBox(height: 8),
-                          // Text(
-                          //   'Logistics Simplified',
-                          //   style: TextStyle(
-                          //     fontSize: 16,
-                          //     color: Colors.white70,
-                          //     letterSpacing: 1.2,
-                          //   ),
-                          // ),
                         ],
                       ),
                     ),
@@ -341,7 +320,7 @@ class _LoginPageState extends State<LoginPage> {
                                 child: ElevatedButton(
                                   onPressed: isLoading ? null : login,
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryDeep,
+                                    backgroundColor: Color(0xFF3F37C9),
                                     foregroundColor: Colors.white,
                                     elevation: 8,
                                     shadowColor: primaryDeep.withOpacity(0.4),
@@ -351,21 +330,21 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                   child: isLoading
                                       ? const SizedBox(
-                                          height: 24,
-                                          width: 24,
-                                          child: CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2.5,
-                                          ),
-                                        )
+                                    height: 24,
+                                    width: 24,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
                                       : const Text(
-                                          'LOGIN',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            letterSpacing: 1.5,
-                                          ),
-                                        ),
+                                    'LOGIN',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
                                 ),
                               ),
 

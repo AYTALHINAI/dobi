@@ -31,8 +31,8 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    const Color primaryDeep = Color(0xFF1A237E);
-    const Color primaryLight = Color(0xFF3949AB);
+    const Color primaryDeep = Color(0xFFffffff);
+    const Color primaryLight = Color(0xFFffffff);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -83,10 +83,10 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
                                   Navigator.pushReplacementNamed(context, AppRoutes.register);
@@ -104,7 +104,7 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                           Icon(
                             Icons.storefront_rounded,
                             size: 40,
-                            color: Colors.white,
+                            color: Color(0xFF1A237E),
                           ),
                           SizedBox(height: 16),
                           Text(
@@ -112,7 +112,7 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w900,
-                              color: Colors.white,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 2,
                             ),
                           ),
@@ -121,7 +121,7 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                             'Owner Details',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),
                           ),
@@ -239,7 +239,7 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryDeep,
+                                    backgroundColor: Color(0xFF1A237E),
                                     foregroundColor: Colors.white,
                                     elevation: 8,
                                     shadowColor: primaryDeep.withOpacity(0.4),
