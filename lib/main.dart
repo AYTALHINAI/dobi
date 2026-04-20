@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'routes/app_routes.dart';
 import 'theme/user_theme.dart';
+import 'screens/animated_splash.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,11 +22,11 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Dobbie App',
       debugShowCheckedModeBanner: false,
+      home: const CustomSplashScreen(),
       // Always light at the MaterialApp level —
       // admin / driver / shop-owner screens are never affected.
       theme: UserTheme.lightTheme,
       onGenerateRoute: (settings) => AppRoutes.generateRoute(settings),
-      initialRoute: AppRoutes.login,
     );
   }
 }

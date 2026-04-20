@@ -132,11 +132,11 @@ class _RegisterPageState extends State<RegisterPage> {
                     Center(
                       child: Column(
                         children: [
-                          Image.asset('assets/logo.png',width: 175, height: 175),
+                          Image.asset('assets/logo.png',width: 185, height: 125),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 31),
+                    const SizedBox(height: 8),
 
                     // WHITE CARD CONTENT
                     Expanded(

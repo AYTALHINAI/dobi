@@ -184,12 +184,12 @@ class _LoginPageState extends State<LoginPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset('assets/logo.png'
-                            ,width: 175, height: 175,
+                            ,width: 185, height: 125,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 41),
+                    const SizedBox(height: 10),
 
                     // LOGIN FORM CARD
                     Expanded(

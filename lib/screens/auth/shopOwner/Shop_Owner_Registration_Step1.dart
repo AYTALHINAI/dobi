@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../routes/app_routes.dart';
 import '../../widgets/step_tracker_bar.dart';
 import 'shop_owner_registration_model.dart'; // Corrected Import
+import 'package:lottie/lottie.dart';
 
 class ShopOwnerStep1Personal extends StatefulWidget {
   const ShopOwnerStep1Personal({super.key});
@@ -98,29 +99,20 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.storefront_rounded,
-                            size: 40,
-                            color: Color(0xFF1A237E),
+                          Lottie.asset(
+                            'assets/Data.json',
+                            height: 160,
+                            repeat: true,
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Step 1',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1A237E),
-                              letterSpacing: 2,
-                            ),
-                          ),
-                           SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Owner Details',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                               color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),

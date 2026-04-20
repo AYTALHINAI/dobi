@@ -3,6 +3,7 @@ import '../../../../routes/app_routes.dart';
 import '../../../../database.dart';
 import '../../widgets/step_tracker_bar.dart';
 import 'shop_owner_registration_model.dart';
+import 'package:lottie/lottie.dart';
 
 class ShopOwnerStep3Terms extends StatefulWidget {
   final ShopOwnerRegistrationData data;
@@ -89,29 +90,20 @@ class _ShopOwnerStep3TermsState extends State<ShopOwnerStep3Terms> {
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.article_rounded,
-                            size: 40,
-                            color: Color(0xFF1A237E),
+                          Lottie.asset(
+                            'assets/Terms.json',
+                            height: 180,
+                            repeat: true,
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Step 3',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1A237E),
-                              letterSpacing: 2,
-                            ),
-                          ),
-                           SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Terms & Confirm',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                               color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),

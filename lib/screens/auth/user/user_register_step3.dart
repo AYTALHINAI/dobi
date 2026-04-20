@@ -3,6 +3,7 @@ import '../../../../routes/app_routes.dart';
 import 'user_registration_model.dart';
 import '../../widgets/step_tracker_bar.dart';
 import '../../../database.dart';
+import 'package:lottie/lottie.dart';
 
 class UserRegisterStep3 extends StatefulWidget {
   final UserRegistrationData data;
@@ -88,29 +89,20 @@ class _UserRegisterStep3State extends State<UserRegisterStep3> {
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.check_circle_outline_rounded,
-                            size: 40,
-                            color: Color(0xFF1A237E),
+                          Lottie.asset(
+                            'assets/Complete.json',
+                            height: 170,
+                            repeat: true,
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Step 3',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1A237E),
-                              letterSpacing: 2,
-                            ),
-                          ),
-                           SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Confirm & Register',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
                               color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),

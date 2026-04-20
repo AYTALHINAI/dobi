@@ -55,15 +55,9 @@ class _UserHomePageState extends State<UserHomePage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'DOBBIE',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: context.uiPrimary,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
+                    Image.asset('assets/logo_horizon.png'
+                            ,width:150 , height: 60,
+                          ),
                       // Cart icon with live badge
                       _CartBadgeButton(
                         onTap: () => Navigator.push(
@@ -429,7 +423,7 @@ class _NearbyShopsSectionState extends State<_NearbyShopsSection> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: color.withValues(alpha: 0.35),
+                          color: color.withValues(alpha: 0.01),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -462,7 +456,7 @@ class _NearbyShopsSectionState extends State<_NearbyShopsSection> {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.55),
+                                  Colors.black.withValues(alpha: 0.01),
                                 ],
                               ),
                             ),
