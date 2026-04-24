@@ -3,10 +3,22 @@ import 'package:firebase_core/firebase_core.dart';
 import 'routes/app_routes.dart';
 import 'theme/user_theme.dart';
 import 'screens/animated_splash.dart';
+import 'package:flutter/services.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  
+   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+   SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent, // match your app background
+      systemNavigationBarIconBrightness: Brightness.dark, // icons color
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+    ),
+
+  );
   runApp(const MyApp());
 }
 
@@ -27,6 +39,23 @@ class MyApp extends StatelessWidget {
       // admin / driver / shop-owner screens are never affected.
       theme: UserTheme.lightTheme,
       onGenerateRoute: (settings) => AppRoutes.generateRoute(settings),
+
+     builder: (context, child) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+      statusBarIconBrightness:
+          isDark ? Brightness.light : Brightness.dark,
+    ),
+  );
+
+  return child!;
+},
+
     );
   }
 }

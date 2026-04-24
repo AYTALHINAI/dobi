@@ -52,6 +52,15 @@ dependencies:
 
 dev_dependencies:
   flutter_native_splash: ^2.4.5
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/Dobbie.png"
+  adaptive_icon_foreground: "assets/Dobbie.png"
+  adaptive_icon_background: "#ffffff"
+
 
   flutter_test:
     sdk: flutter
