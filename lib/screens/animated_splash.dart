@@ -3,6 +3,7 @@ import 'package:animated_splash_screen/animated_splash_screen.dart';
 import 'package:lottie/lottie.dart';
 import 'package:dobi/routes/app_routes.dart';
 import 'package:dobi/screens/auth/login_page.dart';
+import 'package:dobi/screens/auth/welcome.dart';
 
 class CustomSplashScreen extends StatelessWidget {
   const CustomSplashScreen({super.key});
@@ -14,7 +15,7 @@ class CustomSplashScreen extends StatelessWidget {
           child: Lottie.asset('assets/Welcome.json',height: 250,width: 250),
         ),
       splashIconSize: 300,
-      nextScreen: const LoginPage(),
+      nextScreen: const WelcomePage(),
       splashTransition: SplashTransition.fadeTransition,
       duration: 7500,
       backgroundColor: Colors.white,

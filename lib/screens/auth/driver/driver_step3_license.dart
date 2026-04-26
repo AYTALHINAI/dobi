@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'driver_registration_model.dart';
 import '../../widgets/step_tracker_bar.dart';
 import '../../../routes/app_routes.dart';
@@ -79,8 +80,8 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    const Color primaryDeep = Color(0xFF1A237E);
-    const Color primaryLight = Color(0xFF3949AB);
+    const Color primaryDeep = Color(0xFFffffff);
+    const Color primaryLight = Color(0xFFffffff);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -131,10 +132,10 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   Navigator.pushReplacementNamed(
                                     context,
@@ -149,30 +150,16 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.article_rounded,
-                            size: 40,
-                            color: Colors.white,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Step 3',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                           SizedBox(height: 4),
-                          Text(
+                          Lottie.asset('assets/Delivery.json', height: 200),
+                          const SizedBox(height: 10),
+                          const Text(
                             'Terms & Confirm',
                             style: TextStyle(
                               fontSize: 16,
-                              color: Colors.white70,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),
                           ),
@@ -215,7 +202,7 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: primaryDeep,
+                                color: Color(0xFF1A237E),
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -244,7 +231,7 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
                               children: [
                                 Checkbox(
                                   value: isAgreed,
-                                  activeColor: primaryDeep,
+                                  activeColor: const Color(0xFF1A237E),
                                   onChanged: (val) {
                                     setState(() => isAgreed = val ?? false);
                                   },
@@ -267,7 +254,7 @@ By using the Platform, the Driver confirms acceptance of these Terms & Agreement
                               child: ElevatedButton(
                                 onPressed: (isAgreed && !isSubmitting) ? _submitRegistration : null,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: primaryDeep,
+                                  backgroundColor: const Color(0xFF1A237E),
                                   foregroundColor: Colors.white,
                                   disabledBackgroundColor: Colors.grey.shade300,
                                   elevation: 8,

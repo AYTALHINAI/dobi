@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 import '../../database.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:lottie/lottie.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -120,7 +121,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
                                     color: Colors.grey, size: 20),
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),
@@ -132,11 +133,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     Center(
                       child: Column(
                         children: [
-                          Image.asset('assets/logo.png',width: 185, height: 125),
+                          Lottie.asset(
+                            'assets/register.json',
+                            height: 132,
+                            repeat: true,
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
 
                     // WHITE CARD CONTENT
                     Expanded(
@@ -163,7 +168,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             Text(
                               "Let's Get Started",
                               style: TextStyle(
-                                fontSize: 28,
+                                fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blueGrey.shade900,
                               ),

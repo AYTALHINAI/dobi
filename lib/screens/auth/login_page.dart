@@ -177,19 +177,42 @@ class _LoginPageState extends State<LoginPage> {
               child: IntrinsicHeight(
                 child: Column(
                   children: [
+                    // HEADER AREA
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundColor: Colors.black.withOpacity(0.2),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                                    color: Colors.white, size: 20),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     // LOGO AREA
-                    SizedBox(height: size.height * 0.1), // Top spacing
+                    SizedBox(height: size.height * 0.01), // Top spacing
                     Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Image.asset('assets/logo.png'
-                            ,width: 185, height: 125,
+                          Image.asset(
+                            'assets/logo_horizon.png',
+                            width: size.width * 0.7,
+                            fit: BoxFit.contain,
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 60),
 
                     // LOGIN FORM CARD
                     Expanded(
@@ -216,20 +239,35 @@ class _LoginPageState extends State<LoginPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Welcome Back',
+                                'Sign In',
                                 style: TextStyle(
-                                  fontSize: 28,
+                                  fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.blueGrey.shade900,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Text(
-                                'Please sign in to continue',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey.shade600,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    "or ",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => Navigator.pushNamed(context, AppRoutes.register),
+                                    child: Text(
+                                      "Join Dobbie",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: accentColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(height: 32),
 
@@ -298,7 +336,7 @@ class _LoginPageState extends State<LoginPage> {
 
                               // FORGOT PASSWORD
                               Align(
-                                alignment: Alignment.centerRight,
+                                alignment: Alignment.centerLeft,
                                 child: TextButton(
                                   onPressed: () => Navigator.pushNamed(context, AppRoutes.forgotPassword),
                                   style: TextButton.styleFrom(
@@ -409,27 +447,7 @@ class _LoginPageState extends State<LoginPage> {
 
                               const SizedBox(height: 24),
 
-                              // REGISTER LINK
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Don't have an account? ",
-                                    style: TextStyle(color: Colors.grey.shade600),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => Navigator.pushNamed(context, AppRoutes.register),
-                                    child: Text(
-                                      "Register",
-                                      style: TextStyle(
-                                        color: accentColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
+                              const SizedBox(height: 8),
                             ],
                           ),
                         ),

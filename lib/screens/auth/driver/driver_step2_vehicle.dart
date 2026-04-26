@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'driver_registration_model.dart';
 import '../../../../routes/app_routes.dart';
 import '../../widgets/step_tracker_bar.dart';
+import 'package:lottie/lottie.dart';
 
 class DriverStep2Vehicle extends StatefulWidget {
   final DriverRegistrationData data;
@@ -50,8 +51,8 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    const Color primaryDeep = Color(0xFF1A237E);
-    const Color primaryLight = Color(0xFF3949AB);
+    const Color primaryDeep = Color(0xFFffffff);
+    const Color primaryLight = Color(0xFFffffff);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -102,10 +103,10 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundColor: Colors.white.withOpacity(0.2),
+                              backgroundColor: Colors.black.withOpacity(0.2),
                               child: IconButton(
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                                    color: Colors.white, size: 20),
+                                    color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
                                   Navigator.pushReplacementNamed(
@@ -121,30 +122,21 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                       ),
                     ),
 
-                    const Center(
+                    Center(
                       child: Column(
                         children: [
-                          Icon(
-                            Icons.local_shipping_rounded,
-                            size: 40,
-                            color: Colors.white,
+                          Lottie.asset(
+                            'assets/car.json',
+                            height: 200,
+                            repeat: true,
                           ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Step 2',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                              letterSpacing: 2,
-                            ),
-                          ),
-                           SizedBox(height: 4),
-                          Text(
+                          const SizedBox(height: 8),
+                          const Text(
                             'Vehicle Info',
                             style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.white70,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A237E),
                               letterSpacing: 1,
                             ),
                           ),
@@ -262,7 +254,7 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: primaryDeep,
+                                    backgroundColor: const Color(0xFF1A237E),
                                     foregroundColor: Colors.white,
                                     elevation: 8,
                                     shadowColor: primaryDeep.withOpacity(0.4),

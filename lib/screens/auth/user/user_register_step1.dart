@@ -109,7 +109,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                         children: [
                           Lottie.asset(
                             'assets/profile.json',
-                            height: 170,
+                            height: 150,
                             repeat: true,
                           ),
                           const SizedBox(height: 8),
