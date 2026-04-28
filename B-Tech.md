@@ -45,11 +45,20 @@ laundry1@gmail.com
 asdASD123
 
 # Driver
-driver1@gmail.com
+ahmeddriver@gmail.com
 asdASD123
+
 
 # testing commands 
 flutter test test/forgot_password_validation_test.dart
 flutter test test/login_validation_test.dart
 flutter test test/add_laundry_service_validation_test.dart
 flutter test test/edit_service_validation_test.dart
+
+
+# Flow 
+Cart → Checkout → Pick Date & Time Slot → 
+Pay → Order created in Firestore (status: pending, paymentStatus: paid) →
+Shop Owner confirms → processes → marks ready →
+Driver accepts → delivers →
+Customer tracks everything in Orders tab

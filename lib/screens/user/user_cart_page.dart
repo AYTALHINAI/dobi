@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../database.dart';
 import '../../theme/user_theme.dart';
 import 'user_booking_page.dart';
+import 'payment_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Transport Option (mirrors booking page)
@@ -194,27 +195,32 @@ class _UserCartPageState extends State<UserCartPage> {
     }
   }
 
-  void _proceedToPayment() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.schedule_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Payment coming soon! We\'re working on it.',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: context.uiPrimary,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10))),
-      ),
+  void _proceedToPayment(List<QueryDocumentSnapshot> docs, double grandTotal) {
+    if (docs.isEmpty) return;
+
+    final firstData = docs.first.data() as Map<String, dynamic>;
+    final shopId = firstData['shopId'] as String? ?? '';
+    final shopName = firstData['shopName'] as String? ?? 'Laundry Shop';
+
+    final items = docs.map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      final qty = (data['quantity'] as num?)?.toInt() ?? 1;
+      final price = (data['unitPrice'] as num?)?.toDouble() ?? 0.0;
+      return {
+        'serviceName': data['serviceName'] ?? 'Service',
+        'quantity': qty,
+        'price': price,
+      };
+    }).toList();
+
+    Navigator.push(
+      context,
+      userPageRoute((_) => PaymentPage(
+        shopId: shopId,
+        shopName: shopName,
+        totalPrice: grandTotal,
+        items: items,
+      )),
     );
   }
 
@@ -724,7 +730,7 @@ class _UserCartPageState extends State<UserCartPage> {
       child: SizedBox(
         height: 52,
         child: ElevatedButton(
-          onPressed: _proceedToPayment,
+          onPressed: () => _proceedToPayment(docs, grandTotal),
           style: ElevatedButton.styleFrom(
             backgroundColor: context.uiPrimary,
             foregroundColor: Colors.white,

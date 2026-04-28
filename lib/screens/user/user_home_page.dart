@@ -225,29 +225,65 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _PopularServiceCard(
-                            shopName: 'Gloss up Laundry',
-                            rating: 4.5,
-                            distance: '0.2km',
-                            color: Color(0xFFB8A98C),
-                          ),
+                  child: StreamBuilder<QuerySnapshot>(
+                    stream: DatabaseService().getApprovedShops(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      final docs = snapshot.data?.docs ?? [];
+                      if (docs.isEmpty) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(child: Text('No shops available yet')),
+                        );
+                      }
+                      return SizedBox(
+                        height: 190,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final data = docs[index].data() as Map<String, dynamic>;
+                            final shopId = docs[index].id;
+                            final shopName = data['shopName'] ?? 'Unknown Shop';
+                            final wilayat = data['wilayat'] ?? '';
+                            final imageUrl = data['profileImageUrl'] as String?;
+                            // alternating colors for the cards
+                            final color = index % 2 == 0 ? const Color(0xFFB8A98C) : const Color(0xFFC4B49A);
+
+                            return Padding(
+                              padding: EdgeInsets.only(right: index < docs.length - 1 ? 14 : 0),
+                              child: SizedBox(
+                                width: 160,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      userPageRoute((_) => UserBookingPage(
+                                        shopId: shopId,
+                                        shopData: data,
+                                      )),
+                                    );
+                                  },
+                                  child: _PopularServiceCard(
+                                    shopId: shopId,
+                                    shopName: shopName,
+                                    wilayat: wilayat,
+                                    color: color,
+                                    imageUrl: imageUrl,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        SizedBox(width: 14),
-                        Expanded(
-                          child: _PopularServiceCard(
-                            shopName: 'Gloss up Laundry',
-                            rating: 4.5,
-                            distance: '0.2km',
-                            color: Color(0xFFC4B49A),
-                          ),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -748,16 +784,18 @@ class _CategoryCard extends StatelessWidget {
 // ── Popular service card ───────────────────────────────────────────────────────
 class _PopularServiceCard extends StatelessWidget {
   const _PopularServiceCard({
+    required this.shopId,
     required this.shopName,
-    required this.rating,
-    required this.distance,
+    required this.wilayat,
     required this.color,
+    this.imageUrl,
   });
 
+  final String shopId;
   final String shopName;
-  final double rating;
-  final String distance;
+  final String wilayat;
   final Color color;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -778,29 +816,55 @@ class _PopularServiceCard extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: Icon(Icons.local_laundry_service_outlined,
-                color: Colors.white38, size: 44),
+            child: imageUrl != null && imageUrl!.isNotEmpty
+                ? CircleAvatar(
+                    radius: 30,
+                    backgroundImage: NetworkImage(imageUrl!),
+                    backgroundColor: Colors.white24,
+                  )
+                : CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white24,
+                    child: Icon(Icons.store_mall_directory_outlined,
+                        color: Colors.white70, size: 30),
+                  ),
           ),
         ),
         SizedBox(height: 8),
         Row(
           children: [
-            Icon(Icons.star, color: Color(0xFFF5A623), size: 14),
-            SizedBox(width: 3),
-            Text(
-              rating.toString(),
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: context.uiTextPrimary),
+            StreamBuilder<double>(
+              stream: DatabaseService().getShopAverageRating(shopId),
+              builder: (context, snapshot) {
+                final rating = snapshot.data ?? 0.0;
+                if (rating == 0.0) {
+                  return Text(
+                    'No reviews yet',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: context.uiTextSecondary,
+                    ),
+                  );
+                }
+                return Text(
+                  '${rating.toStringAsFixed(1)} ⭐',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: context.uiTextPrimary,
+                  ),
+                );
+              },
             ),
             const Spacer(),
             Text(
-              distance,
+              wilayat,
               style: TextStyle(fontSize: 11, color: context.uiTextSecondary),
+              overflow: TextOverflow.ellipsis,
             ),
             SizedBox(width: 4),
-            Icon(Icons.directions_walk,
+            Icon(Icons.location_on_outlined,
                 size: 14, color: context.uiTextSecondary),
           ],
         ),

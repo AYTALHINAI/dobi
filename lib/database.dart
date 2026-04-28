@@ -661,4 +661,109 @@ class DatabaseService {
     }
     await batch.commit();
   }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ORDERS – reads & writes
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /// Live stream of the current user's orders (sorted client-side to avoid
+  /// requiring a composite Firestore index).
+  Stream<QuerySnapshot> getUserOrdersStream(String uid) => _firestore
+      .collection('orders')
+      .where('userId', isEqualTo: uid)
+      .snapshots();
+
+  Future<void> placeOrder(Map<String, dynamic> orderData) async {
+    await _firestore.collection('orders').add(orderData);
+  }
+
+  Future<void> updateOrderPaymentStatus(String orderId, String status) async {
+    await _firestore.collection('orders').doc(orderId).update({'paymentStatus': status});
+  }
+
+  Stream<QuerySnapshot> getApprovedShops() {
+    return _firestore
+        .collection('shopOwners')
+        .where('applicationStatus', isEqualTo: 'approved')
+        .snapshots();
+  }
+
+  /// Live stream of a shop's orders (sorted client-side to avoid
+  /// requiring a composite Firestore index).
+  Stream<QuerySnapshot> getShopOrdersStream(String shopId) {
+    return _firestore
+        .collection('orders')
+        .where('shopId', isEqualTo: shopId)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getDriverAvailableOrders() {
+    return _firestore
+        .collection('orders')
+        .where('status', isEqualTo: 'ready')
+        .where('driverId', isNull: true)
+        .snapshots();
+  }
+
+  Future<void> assignDriverToOrder(String orderId, String driverId) async {
+    await _firestore.collection('orders').doc(orderId).update({
+      'driverId': driverId,
+      'status': 'picked',
+    });
+  }
+
+  Future<void> updateOrderStatus(String orderId, String newStatus) async {
+    await _firestore.collection('orders').doc(orderId).update({'status': newStatus});
+  }
+
+  /// Active orders for a driver (sorted client-side to avoid composite index).
+  Stream<QuerySnapshot> getDriverActiveOrders(String driverId) {
+    return _firestore
+        .collection('orders')
+        .where('driverId', isEqualTo: driverId)
+        .where('status', whereIn: ['picked', 'in_progress'])
+        .snapshots();
+  }
+
+  /// Delivered orders for a driver (sorted client-side to avoid composite index).
+  Stream<QuerySnapshot> getDriverOrderHistory(String driverId) {
+    return _firestore
+        .collection('orders')
+        .where('driverId', isEqualTo: driverId)
+        .where('status', isEqualTo: 'delivered')
+        .snapshots();
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FEEDBACK
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  Future<void> submitFeedback(Map<String, dynamic> feedbackData) async {
+    final batch = _firestore.batch();
+    
+    // Add to feedback collection
+    final feedbackRef = _firestore.collection('feedback').doc();
+    batch.set(feedbackRef, feedbackData);
+
+    // Update order document to mark feedback given
+    final orderRef = _firestore.collection('orders').doc(feedbackData['orderId']);
+    batch.update(orderRef, {'feedbackGiven': true});
+
+    await batch.commit();
+  }
+
+  Stream<double> getShopAverageRating(String shopId) {
+    return _firestore
+        .collection('feedback')
+        .where('shopId', isEqualTo: shopId)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.docs.isEmpty) return 0.0;
+      double total = 0;
+      for (var doc in snapshot.docs) {
+        total += (doc.data()['rating'] as num?)?.toDouble() ?? 0.0;
+      }
+      return total / snapshot.docs.length;
+    });
+  }
 }
