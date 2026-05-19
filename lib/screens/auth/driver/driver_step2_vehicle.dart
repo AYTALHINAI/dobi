@@ -200,13 +200,7 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                 plateNumberController,
                                 "Vehicle Plate Number",
                                 Icons.pin_drop,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return "Enter Vehicle Plate Number";
-                                  if (!RegExp(r'^\d{1,5}[A-Z]+[A-Z]?$').hasMatch(v.trim())) {
-                                    return "Invalid Oman plate format (e.g., 1234AB)";
-                                  }
-                                  return null;
-                                },
+                                validator: DriverVehicleValidators.validatePlateNumber,
                               ),
                               const SizedBox(height: 8),
                               _infoBox("Format: 1234AB (Max 5 digits, then letters)"),
@@ -217,13 +211,7 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
                                 licenseNumberController,
                                 "Driver License Number",
                                 Icons.credit_card,
-                                validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return "Enter License Number";
-                                  if (!RegExp(r'^[A-Z0-9]+$').hasMatch(v.trim())) {
-                                    return "Invalid license number format";
-                                  }
-                                  return null;
-                                },
+                                validator: DriverVehicleValidators.validateLicenseNumber,
                               ),
 
                               const SizedBox(height: 35),
@@ -398,6 +386,24 @@ class _DriverStep2VehicleState extends State<DriverStep2Vehicle> {
         style: TextStyle(fontSize: 12, color: Colors.blueGrey.shade700),
       ),
     );
+  }
+}
+
+class DriverVehicleValidators {
+  static String? validatePlateNumber(String? v) {
+    if (v == null || v.trim().isEmpty) return "Enter Vehicle Plate Number";
+    if (!RegExp(r'^\d{1,5}[A-Z]+[A-Z]?$').hasMatch(v.trim())) {
+      return "Invalid Oman plate format (e.g., 1234AB)";
+    }
+    return null;
+  }
+
+  static String? validateLicenseNumber(String? v) {
+    if (v == null || v.trim().isEmpty) return "Enter License Number";
+    if (!RegExp(r'^[A-Z0-9]+$').hasMatch(v.trim())) {
+      return "Invalid license number format";
+    }
+    return null;
   }
 }
 

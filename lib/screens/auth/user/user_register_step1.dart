@@ -303,40 +303,13 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: (v) {
-        if (v == null || v.trim().isEmpty) return "Enter $label";
-
-        if (label == "Full Name") {
-          if (v.trim().length < 3) return "Name must be at least 3 characters";
-          if (!RegExp(r"^[a-zA-Z ]+$").hasMatch(v.trim())) {
-            return "Name can contain letters only";
-          }
-        }
-
-        if (label == "Phone Number") {
-          if (!RegExp(r'^[0-9]+$').hasMatch(v)) return "Phone must contain numbers only";
-          if (v.length != 8) return "Phone number must be exactly 8 digits";
-          if (!v.startsWith('9') && !v.startsWith('7')) {
-            return "Phone number must start with 7 or 9";
-          }
-        }
-
-        if (label == "Email") {
-          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
-            return "Enter a valid email";
-          }
-        }
-
-        if (label == "Password") {
-          if (v.length < 6) return "Min 6 characters";
-          if (!RegExp(r'[A-Z]').hasMatch(v)) return "Must contain an uppercase letter";
-          if (!RegExp(r'[a-z]').hasMatch(v)) return "Must contain a lowercase letter";
-          if (!RegExp(r'[0-9]').hasMatch(v)) return "Must contain a number";
-        }
-
+        if (label == "Full Name") return RegisterValidators.validateFullName(v);
+        if (label == "Phone Number") return RegisterValidators.validatePhone(v);
+        if (label == "Email") return RegisterValidators.validateEmail(v);
+        if (label == "Password") return RegisterValidators.validatePassword(v);
         if (label == "Confirm Password") {
-          if (v != passwordController.text) return "Passwords do not match";
+          return RegisterValidators.validateConfirmPassword(v, passwordController.text);
         }
-
         return null;
       },
       style: const TextStyle(fontWeight: FontWeight.w500),
@@ -361,5 +334,49 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
         ),
       ),
     );
+  }
+}
+
+class RegisterValidators {
+  static String? validateFullName(String? v) {
+    if (v == null || v.trim().isEmpty) return "Enter Full Name";
+    if (v.trim().length < 3) return "Name must be at least 3 characters";
+    if (!RegExp(r"^[a-zA-Z ]+$").hasMatch(v.trim())) {
+      return "Name can contain letters only";
+    }
+    return null;
+  }
+
+  static String? validatePhone(String? v) {
+    if (v == null || v.trim().isEmpty) return "Enter Phone Number";
+    if (!RegExp(r'^[0-9]+$').hasMatch(v)) return "Phone must contain numbers only";
+    if (v.length != 8) return "Phone number must be exactly 8 digits";
+    if (!v.startsWith('9') && !v.startsWith('7')) {
+      return "Phone number must start with 7 or 9";
+    }
+    return null;
+  }
+
+  static String? validateEmail(String? v) {
+    if (v == null || v.trim().isEmpty) return "Enter Email";
+    if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(v.trim())) {
+      return "Enter a valid email";
+    }
+    return null;
+  }
+
+  static String? validatePassword(String? v) {
+    if (v == null || v.isEmpty) return "Enter Password";
+    if (v.length < 6) return "Min 6 characters";
+    if (!RegExp(r'[A-Z]').hasMatch(v)) return "Must contain an uppercase letter";
+    if (!RegExp(r'[a-z]').hasMatch(v)) return "Must contain a lowercase letter";
+    if (!RegExp(r'[0-9]').hasMatch(v)) return "Must contain a number";
+    return null;
+  }
+
+  static String? validateConfirmPassword(String? v, String password) {
+    if (v == null || v.isEmpty) return "Enter Confirm Password";
+    if (v != password) return "Passwords do not match";
+    return null;
   }
 }
