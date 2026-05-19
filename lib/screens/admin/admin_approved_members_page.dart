@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../database.dart';
+import '../../routes/app_routes.dart';
 import 'admin_approved_shop_detail_page.dart';
 import 'admin_approved_driver_detail_page.dart';
 
@@ -18,17 +19,20 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
 
   List<Map<String, dynamic>> _shops = [];
   List<Map<String, dynamic>> _drivers = [];
+  List<Map<String, dynamic>> _customers = [];
   bool _loadingShops = true;
   bool _loadingDrivers = true;
+  bool _loadingCustomers = true;
 
   static const Color _primary = Color(0xFF1A237E);
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadShops();
     _loadDrivers();
+    _loadCustomers();
   }
 
   @override
@@ -56,6 +60,17 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
     } catch (_) {
     } finally {
       if (mounted) setState(() => _loadingDrivers = false);
+    }
+  }
+
+  Future<void> _loadCustomers() async {
+    setState(() => _loadingCustomers = true);
+    try {
+      final list = await _db.getCustomersList();
+      if (mounted) setState(() => _customers = list);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loadingCustomers = false);
     }
   }
 
@@ -101,6 +116,33 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Driver deleted successfully.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteCustomer(Map<String, dynamic> customer) async {
+    final confirmed = await _showDeleteDialog(
+      name: customer['fullName'] ?? customer['displayName'] ?? 'this customer',
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await _db.deleteCustomer(customer['uid'] as String);
+      if (mounted) {
+        setState(() =>
+            _customers.removeWhere((c) => c['uid'] == customer['uid']));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Customer deleted successfully.'),
             backgroundColor: Colors.red,
           ),
         );
@@ -188,11 +230,15 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
           tabs: [
             Tab(
               icon: const Icon(Icons.storefront_outlined),
-              text: 'Laundry Shops (${_shops.length})',
+              text: 'Shops (${_shops.length})',
             ),
             Tab(
               icon: const Icon(Icons.delivery_dining_outlined),
               text: 'Drivers (${_drivers.length})',
+            ),
+            Tab(
+              icon: const Icon(Icons.person_outline),
+              text: 'Customers (${_customers.length})',
             ),
           ],
         ),
@@ -202,6 +248,7 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
         children: [
           _buildShopsTab(),
           _buildDriversTab(),
+          _buildCustomersTab(),
         ],
       ),
     );
@@ -281,6 +328,44 @@ class _AdminApprovedMembersPageState extends State<AdminApprovedMembersPage>
               _loadDrivers();
             },
             onDelete: () => _confirmDeleteDriver(driver),
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Customers tab ────────────────────────────────────────────────────────────
+
+  Widget _buildCustomersTab() {
+    if (_loadingCustomers) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_customers.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.person_off_outlined,
+        message: 'No customers yet.',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadCustomers,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        itemCount: _customers.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final customer = _customers[index];
+          return _CustomerCard(
+            customer: customer,
+            onTap: () async {
+              await Navigator.pushNamed(
+                context,
+                AppRoutes.adminCustomerDetail,
+                arguments: customer,
+              );
+              _loadCustomers();
+            },
+            onDelete: () => _confirmDeleteCustomer(customer),
           );
         },
       ),
@@ -463,6 +548,85 @@ class _DriverCard extends StatelessWidget {
                 icon: const Icon(Icons.delete_outline,
                     color: Colors.redAccent),
                 tooltip: 'Delete driver',
+                onPressed: onDelete,
+              ),
+              const Icon(Icons.chevron_right, color: Colors.grey),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Customer card ────────────────────────────────────────────────────────────
+
+class _CustomerCard extends StatelessWidget {
+  final Map<String, dynamic> customer;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _CustomerCard({
+    required this.customer,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final initial =
+        ((customer['fullName'] as String?) ?? (customer['displayName'] as String?) ?? 'C')[0].toUpperCase();
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      elevation: 1,
+      shadowColor: Colors.black12,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: Colors.blue.shade50,
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer['fullName'] ?? customer['displayName'] ?? 'No Name',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      customer['email'] ?? '',
+                      style: TextStyle(
+                          fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete_outline,
+                    color: Colors.redAccent),
+                tooltip: 'Delete customer',
                 onPressed: onDelete,
               ),
               const Icon(Icons.chevron_right, color: Colors.grey),

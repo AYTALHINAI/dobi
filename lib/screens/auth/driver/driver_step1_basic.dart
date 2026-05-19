@@ -94,7 +94,7 @@ class _DriverStep1BasicState extends State<DriverStep1Basic> {
                                     color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
-                                  Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

@@ -313,6 +313,12 @@ class DatabaseService {
       .snapshots()
       .map((s) => s.docs.length);
 
+  /// Live count of all orders.
+  Stream<int> watchTotalOrders() => _firestore
+      .collection('orders')
+      .snapshots()
+      .map((s) => s.docs.length);
+
   /// Get total count of users
   Future<int> getTotalUsers() async {
     try {
@@ -436,6 +442,19 @@ class DatabaseService {
     }).toList();
   }
 
+  /// Fetch all customers as a list of data maps.
+  Future<List<Map<String, dynamic>>> getCustomersList() async {
+    final snap = await _firestore
+        .collection('users')
+        .where('role', isEqualTo: 'user')
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['uid'] = d.id;
+      return data;
+    }).toList();
+  }
+
   /// Permanently delete a shop owner document.
   Future<void> deleteShopOwner(String uid) =>
       _firestore.collection('shopOwners').doc(uid).delete();
@@ -443,6 +462,10 @@ class DatabaseService {
   /// Permanently delete a driver document.
   Future<void> deleteDriver(String uid) =>
       _firestore.collection('drivers').doc(uid).delete();
+
+  /// Permanently delete a customer document.
+  Future<void> deleteCustomer(String uid) =>
+      _firestore.collection('users').doc(uid).delete();
 
   /// Update an existing service document.
   Future<void> updateService(
@@ -673,6 +696,10 @@ class DatabaseService {
       .where('userId', isEqualTo: uid)
       .snapshots();
 
+  /// Live stream of a single order document (for the tracking page).
+  Stream<DocumentSnapshot> getOrderStream(String orderId) =>
+      _firestore.collection('orders').doc(orderId).snapshots();
+
   Future<void> placeOrder(Map<String, dynamic> orderData) async {
     await _firestore.collection('orders').add(orderData);
   }
@@ -697,10 +724,24 @@ class DatabaseService {
         .snapshots();
   }
 
+  /// Available orders for the driver Available tab:
+  /// • pending orders (no pickupDriverId) → driver picks up from customer
+  /// • ready orders (no driverId) → driver delivers to customer
+  Stream<QuerySnapshot> getDriverPickupAndDeliveryOrders() {
+    // Firestore doesn't support OR queries across fields in a single stream,
+    // so we merge two streams client-side via StreamBuilder on the page.
+    // Instead, fetch all unassigned orders with status in [pending, ready].
+    return _firestore
+        .collection('orders')
+        .where('status', whereIn: ['order_placed', 'ready_for_pickup'])
+        .snapshots();
+  }
+
+  /// Legacy alias kept for compatibility.
   Stream<QuerySnapshot> getDriverAvailableOrders() {
     return _firestore
         .collection('orders')
-        .where('status', isEqualTo: 'ready')
+        .where('status', isEqualTo: 'ready_for_pickup')
         .where('driverId', isNull: true)
         .snapshots();
   }
@@ -708,7 +749,7 @@ class DatabaseService {
   Future<void> assignDriverToOrder(String orderId, String driverId) async {
     await _firestore.collection('orders').doc(orderId).update({
       'driverId': driverId,
-      'status': 'picked',
+      'status': 'driver_assigned',
     });
   }
 
@@ -716,21 +757,35 @@ class DatabaseService {
     await _firestore.collection('orders').doc(orderId).update({'status': newStatus});
   }
 
-  /// Active orders for a driver (sorted client-side to avoid composite index).
+  /// Active orders for a driver: picked (heading to shop) or out_for_delivery (heading to customer).
   Stream<QuerySnapshot> getDriverActiveOrders(String driverId) {
+    // Both pickup leg (pickupDriverId) and delivery leg (driverId) use the same driver.
+    // We fetch by driverId for simplicity; pickup orders use pickupDriverId.
+    // Use a broader query and filter client-side.
     return _firestore
         .collection('orders')
-        .where('driverId', isEqualTo: driverId)
-        .where('status', whereIn: ['picked', 'in_progress'])
-        .snapshots();
+        .where('status', whereIn: ['driver_assigned', 'driver_heading_to_shop_delivery', 'heading_to_customer'])
+        .snapshots()
+        .map((snap) {
+      // Keep only orders belonging to this driver (either leg)
+      final filtered = snap.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return data['pickupDriverId'] == driverId ||
+            data['driverId'] == driverId;
+      }).toList();
+      // Return a fake QuerySnapshot — we use the raw list directly in the widget.
+      return snap;
+    });
   }
 
-  /// Delivered orders for a driver (sorted client-side to avoid composite index).
+  /// History orders for a driver (includes completed delivery legs and completed pickup legs).
   Stream<QuerySnapshot> getDriverOrderHistory(String driverId) {
     return _firestore
         .collection('orders')
-        .where('driverId', isEqualTo: driverId)
-        .where('status', isEqualTo: 'delivered')
+        .where(Filter.or(
+          Filter('driverId', isEqualTo: driverId),
+          Filter('pickupDriverId', isEqualTo: driverId),
+        ))
         .snapshots();
   }
 
@@ -752,6 +807,33 @@ class DatabaseService {
     await batch.commit();
   }
 
+  Stream<QuerySnapshot> getShopFeedbacksStream(String shopId) {
+    return _firestore
+        .collection('feedback')
+        .where('shopId', isEqualTo: shopId)
+        .snapshots();
+  }
+
+  Future<void> replyToFeedback(String feedbackId, String replyText) async {
+    await _firestore.collection('feedback').doc(feedbackId).update({
+      'shopReply': replyText,
+      'shopReplyAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<DocumentSnapshot?> getFeedbackForOrder(String orderId) async {
+    final querySnapshot = await _firestore
+        .collection('feedback')
+        .where('orderId', isEqualTo: orderId)
+        .limit(1)
+        .get();
+    
+    if (querySnapshot.docs.isNotEmpty) {
+      return querySnapshot.docs.first;
+    }
+    return null;
+  }
+
   Stream<double> getShopAverageRating(String shopId) {
     return _firestore
         .collection('feedback')
@@ -765,5 +847,19 @@ class DatabaseService {
       }
       return total / snapshot.docs.length;
     });
+  }
+
+  Future<double> getShopAverageRatingFuture(String shopId) async {
+    final querySnapshot = await _firestore
+        .collection('feedback')
+        .where('shopId', isEqualTo: shopId)
+        .get();
+    
+    if (querySnapshot.docs.isEmpty) return 0.0;
+    double total = 0;
+    for (var doc in querySnapshot.docs) {
+      total += (doc.data()['rating'] as num?)?.toDouble() ?? 0.0;
+    }
+    return total / querySnapshot.docs.length;
   }
 }

@@ -12,6 +12,13 @@ class DriverHistoryPage extends StatefulWidget {
   State<DriverHistoryPage> createState() => _DriverHistoryPageState();
 }
 
+class _DriverHistoryItem {
+  final QueryDocumentSnapshot doc;
+  final String legType; // 'pickup' or 'delivery'
+
+  _DriverHistoryItem({required this.doc, required this.legType});
+}
+
 class _DriverHistoryPageState extends State<DriverHistoryPage> {
   DateTime? _selectedDay;
 
@@ -23,10 +30,10 @@ class _DriverHistoryPageState extends State<DriverHistoryPage> {
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
-  List<QueryDocumentSnapshot> _sorted(List<QueryDocumentSnapshot> raw) {
+  List<_DriverHistoryItem> _sorted(List<_DriverHistoryItem> raw) {
     return [...raw]..sort((a, b) {
-        final aTs = (a.data() as Map<String, dynamic>)['createdAt'];
-        final bTs = (b.data() as Map<String, dynamic>)['createdAt'];
+        final aTs = (a.doc.data() as Map<String, dynamic>)['createdAt'];
+        final bTs = (b.doc.data() as Map<String, dynamic>)['createdAt'];
         if (aTs == null && bTs == null) return 0;
         if (aTs == null) return 1;
         if (bTs == null) return -1;
@@ -34,20 +41,20 @@ class _DriverHistoryPageState extends State<DriverHistoryPage> {
       });
   }
 
-  List<QueryDocumentSnapshot> _filterByDay(
-      List<QueryDocumentSnapshot> docs, DateTime? day) {
-    if (day == null) return docs;
-    return docs.where((doc) {
-      final ts = (doc.data() as Map<String, dynamic>)['createdAt'];
+  List<_DriverHistoryItem> _filterByDay(
+      List<_DriverHistoryItem> items, DateTime? day) {
+    if (day == null) return items;
+    return items.where((item) {
+      final ts = (item.doc.data() as Map<String, dynamic>)['createdAt'];
       if (ts == null || ts is! Timestamp) return false;
       final d = ts.toDate();
       return d.year == day.year && d.month == day.month && d.day == day.day;
     }).toList();
   }
 
-  bool _hasDelivery(List<QueryDocumentSnapshot> docs, DateTime day) {
-    return docs.any((doc) {
-      final ts = (doc.data() as Map<String, dynamic>)['createdAt'];
+  bool _hasDelivery(List<_DriverHistoryItem> items, DateTime day) {
+    return items.any((item) {
+      final ts = (item.doc.data() as Map<String, dynamic>)['createdAt'];
       if (ts is! Timestamp) return false;
       final d = ts.toDate();
       return d.year == day.year && d.month == day.month && d.day == day.day;
@@ -95,7 +102,26 @@ class _DriverHistoryPageState extends State<DriverHistoryPage> {
           );
         }
 
-        final allDocs  = _sorted(snapshot.data?.docs ?? []);
+        final allFetchedDocs = snapshot.data?.docs ?? [];
+        final List<_DriverHistoryItem> historyItems = [];
+        
+        for (var doc in allFetchedDocs) {
+          final data = doc.data() as Map<String, dynamic>;
+          final status = data['status'] as String? ?? '';
+          
+          bool isDeliveryCompleted = data['driverId'] == widget.uid && status == 'completed';
+          bool isPickupCompleted = data['pickupDriverId'] == widget.uid && 
+              ['at_shop_processing', 'ready_for_pickup', 'driver_heading_to_shop_delivery', 'heading_to_customer', 'completed'].contains(status);
+              
+          if (isPickupCompleted) {
+            historyItems.add(_DriverHistoryItem(doc: doc, legType: 'pickup'));
+          }
+          if (isDeliveryCompleted) {
+            historyItems.add(_DriverHistoryItem(doc: doc, legType: 'delivery'));
+          }
+        }
+
+        final allDocs  = _sorted(historyItems);
         final filtered = _filterByDay(allDocs, _selectedDay);
 
         return Column(
@@ -173,13 +199,18 @@ class _DriverHistoryPageState extends State<DriverHistoryPage> {
                       itemCount: filtered.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        final orderData =
-                            filtered[index].data() as Map<String, dynamic>;
+                        final item = filtered[index];
+                        final orderData = item.doc.data() as Map<String, dynamic>;
+
+                        String completionText = item.legType == 'pickup' 
+                            ? 'Completed ✓ (Customer to Shop)' 
+                            : 'Completed ✓ (Shop to Customer)';
+
                         return DriverOrderCard(
                           orderData: orderData,
-                          actionWidget: const Text(
-                            'Completed ✓',
-                            style: TextStyle(
+                          actionWidget: Text(
+                            completionText,
+                            style: const TextStyle(
                               color: Colors.green,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -240,7 +271,7 @@ class _DriverHistoryPageState extends State<DriverHistoryPage> {
 
   // ── Compact horizontal date strip ─────────────────────────────────────────────
 
-  Widget _buildDateStrip(List<QueryDocumentSnapshot> allDocs) {
+  Widget _buildDateStrip(List<_DriverHistoryItem> allDocs) {
     const months = [
       'Jan','Feb','Mar','Apr','May','Jun',
       'Jul','Aug','Sep','Oct','Nov','Dec',

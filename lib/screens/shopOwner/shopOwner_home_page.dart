@@ -10,7 +10,6 @@ import 'shopOwner_feedback_page.dart';
 
 class ShopOwnerHomePage extends StatefulWidget {
   const ShopOwnerHomePage({super.key});
-
   @override
   State<ShopOwnerHomePage> createState() => _ShopOwnerHomePageState();
 }
@@ -39,10 +38,6 @@ class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
     } catch (_) {}
   }
 
-  void _onNavTap(int index) {
-    setState(() => _selectedIndex = index);
-  }
-
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -50,18 +45,16 @@ class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
       const AddLaundryServicePage(),
       const ShopOwnerProfilePage(),
     ];
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: _onNavTap,
+        onTap: (i) => setState(() => _selectedIndex = i),
         backgroundColor: Colors.white,
         selectedItemColor: Colors.black87,
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle:
-            const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         elevation: 8,
         items: const [
@@ -70,10 +63,7 @@ class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
             activeIcon: Icon(Icons.dashboard_customize),
             label: 'Manage',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Service',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add Service'),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             activeIcon: Icon(Icons.person),
@@ -85,7 +75,7 @@ class _ShopOwnerHomePageState extends State<ShopOwnerHomePage> {
   }
 }
 
-// ─── Dashboard body ───────────────────────────────────────────────────────────
+// ─── Dashboard body ────────────────────────────────────────────────────────────
 
 class _DashboardBody extends StatelessWidget {
   final String shopName;
@@ -93,90 +83,117 @@ class _DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting
             Text(
-              shopName.isEmpty ? 'Hello!' : 'Hello $shopName',
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+              shopName.isEmpty ? 'Hello!' : 'Hello $shopName 👋',
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
+            const SizedBox(height: 6),
+            Text('Here\'s how your shop is performing',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500)),
             const SizedBox(height: 24),
 
-            // Stat cards row
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Orders',
-                    value: '-',
-                    color: const Color(0xFF7B7FD4),
-                    icon: Icons.list_alt_rounded,
-                  ),
-                ),
+            // Orders + Customers live stream
+            if (uid != null)
+              StreamBuilder<QuerySnapshot>(
+                stream: DatabaseService().getShopOrdersStream(uid),
+                builder: (context, snap) {
+                  final docs = snap.data?.docs ?? [];
+                  final loading = snap.connectionState == ConnectionState.waiting;
+                  final orderCount = docs.length;
+                  final uniqueCustomers = docs
+                      .map((d) => (d.data() as Map<String, dynamic>)['userId'] as String? ?? '')
+                      .toSet()
+                      .where((s) => s.isNotEmpty)
+                      .length;
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Orders',
+                          value: loading ? '…' : '$orderCount',
+                          color: const Color(0xFF7B7FD4),
+                          icon: Icons.list_alt_rounded,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _StatCard(
+                          label: 'Customers',
+                          value: loading ? '…' : '$uniqueCustomers',
+                          color: const Color(0xFFF5A623),
+                          icon: Icons.people_alt_rounded,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              )
+            else
+              Row(children: [
+                Expanded(child: _StatCard(label: 'Orders', value: '—', color: const Color(0xFF7B7FD4), icon: Icons.list_alt_rounded)),
                 const SizedBox(width: 14),
-                Expanded(
-                  child: _StatCard(
-                    label: 'Customers',
-                    value: '-',
-                    color: const Color(0xFFF5A623),
-                    icon: Icons.people_alt_rounded,
-                  ),
-                ),
-              ],
-            ),
+                Expanded(child: _StatCard(label: 'Customers', value: '—', color: const Color(0xFFF5A623), icon: Icons.people_alt_rounded)),
+              ]),
+
             const SizedBox(height: 14),
 
-            // Rate card
-            const _RateCard(rate: 0, value: '-'),
+            // Rating live stream
+            if (uid != null)
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('feedback')
+                    .where('shopId', isEqualTo: uid)
+                    .snapshots(),
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const _RateCard(rate: 0, value: '…');
+                  }
+                  final docs = snap.data?.docs ?? [];
+                  if (docs.isEmpty) return const _RateCard(rate: 0, value: 'No ratings yet');
+                  final total = docs.fold<double>(0, (s, d) {
+                    final r = (d.data() as Map<String, dynamic>)['rating'] as num? ?? 0;
+                    return s + r.toDouble();
+                  });
+                  final avg = total / docs.length;
+                  return _RateCard(
+                    rate: avg.round(),
+                    value: '${avg.toStringAsFixed(1)} / 5',
+                    reviewCount: docs.length,
+                  );
+                },
+              )
+            else
+              const _RateCard(rate: 0, value: '—'),
 
             const SizedBox(height: 36),
 
-            // Action buttons
             _ActionButton(
-              icon: Icons.thumb_down_alt_outlined,
+              icon: Icons.thumb_up_alt_outlined,
               label: 'View Feedback',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ShopOwnerFeedbackPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ShopOwnerFeedbackPage())),
             ),
             const SizedBox(height: 14),
             _ActionButton(
               icon: Icons.settings_outlined,
               label: 'View Services',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ShopOwnerServicesPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ShopOwnerServicesPage())),
             ),
             const SizedBox(height: 14),
             _ActionButton(
               icon: Icons.receipt_long_outlined,
               label: 'View Orders',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const ShopOwnerOrdersPage(),
-                  ),
-                );
-              },
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ShopOwnerOrdersPage())),
             ),
           ],
         ),
@@ -185,7 +202,7 @@ class _DashboardBody extends StatelessWidget {
   }
 }
 
-// ─── Stat Card ──────────────────────────────────────────────────────────────── 
+// ─── Stat Card ─────────────────────────────────────────────────────────────────
 
 class _StatCard extends StatelessWidget {
   final String label;
@@ -204,43 +221,24 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 110,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
       padding: const EdgeInsets.all(16),
       child: Stack(
         children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(label,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text(value,
+                  style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
             ],
           ),
           Positioned(
             bottom: 0,
             right: 0,
-            child: Icon(
-              icon,
-              color: Colors.white.withValues(alpha: 0.4),
-              size: 44,
-            ),
+            child: Icon(icon, color: Colors.white.withValues(alpha: 0.4), size: 44),
           ),
         ],
       ),
@@ -248,77 +246,61 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// ─── Rate Card ────────────────────────────────────────────────────────────────
+// ─── Rate Card ─────────────────────────────────────────────────────────────────
 
 class _RateCard extends StatelessWidget {
   final int rate;
   final String value;
+  final int reviewCount;
 
-  const _RateCard({required this.rate, required this.value});
+  const _RateCard({required this.rate, required this.value, this.reviewCount = 0});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 200),
       decoration: BoxDecoration(
-        color: const Color(0xFFE05555),
-        borderRadius: BorderRadius.circular(16),
-      ),
+          color: const Color(0xFFE05555), borderRadius: BorderRadius.circular(16)),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text(
-                'Rate',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text('Rating',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
               const SizedBox(width: 10),
-              Row(
-                children: List.generate(
-                  5,
-                  (i) => Icon(
-                    i < rate ? Icons.star : Icons.star_border,
-                    color: const Color(0xFFF5C518),
-                    size: 18,
-                  ),
-                ),
+              ...List.generate(
+                5,
+                (i) => Icon(i < rate ? Icons.star : Icons.star_border,
+                    color: const Color(0xFFF5C518), size: 18),
               ),
+              if (reviewCount > 0) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '($reviewCount ${reviewCount == 1 ? 'review' : 'reviews'})',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(value,
+              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
 
-// ─── Action Button ────────────────────────────────────────────────────────────
+// ─── Action Button ─────────────────────────────────────────────────────────────
 
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
 
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  const _ActionButton({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -334,36 +316,12 @@ class _ActionButton extends StatelessWidget {
             children: [
               Icon(icon, color: Colors.white, size: 24),
               const SizedBox(width: 14),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Text(label,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+              const Spacer(),
+              Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.5), size: 22),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Placeholder page ─────────────────────────────────────────────────────────
-
-class _PlaceholderPage extends StatelessWidget {
-  final String label;
-  const _PlaceholderPage({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Text(
-          label,
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
         ),
       ),
     );

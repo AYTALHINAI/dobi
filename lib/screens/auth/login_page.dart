@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import '../../routes/app_routes.dart';
 import '../../database.dart';
+import 'welcome.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -190,7 +191,14 @@ class _LoginPageState extends State<LoginPage> {
                                 icon: const Icon(Icons.arrow_back_ios_new_rounded,
                                     color: Colors.white, size: 20),
                                 onPressed: () {
-                                  Navigator.pop(context);
+                                  if (Navigator.canPop(context)) {
+                                    Navigator.pop(context);
+                                  } else {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const WelcomePage()),
+                                    );
+                                  }
                                 },
                               ),
                             ),

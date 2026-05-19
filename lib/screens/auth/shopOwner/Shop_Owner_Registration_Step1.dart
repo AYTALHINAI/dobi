@@ -90,7 +90,7 @@ class _ShopOwnerStep1PersonalState extends State<ShopOwnerStep1Personal> {
                                     color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
-                                  Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

@@ -7,49 +7,6 @@ import 'user_booking_page.dart';
 import 'payment_page.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Transport Option (mirrors booking page)
-// ─────────────────────────────────────────────────────────────────────────────
-enum _Transport { none, pickup, delivery, both }
-
-extension _TransportExt on _Transport {
-  String get label {
-    switch (this) {
-      case _Transport.pickup:
-        return 'Pick up';
-      case _Transport.delivery:
-        return 'Delivery';
-      case _Transport.both:
-        return 'Pick up & Delivery';
-      case _Transport.none:
-        return 'None (self drop-off)';
-    }
-  }
-
-  String get subtitle {
-    switch (this) {
-      case _Transport.pickup:
-      case _Transport.delivery:
-        return '0.500 OMR';
-      case _Transport.both:
-        return '1.000 OMR';
-      case _Transport.none:
-        return 'No transport cost';
-    }
-  }
-
-  double get fee {
-    switch (this) {
-      case _Transport.pickup:
-      case _Transport.delivery:
-        return 0.500;
-      case _Transport.both:
-        return 1.000;
-      case _Transport.none:
-        return 0.0;
-    }
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Cart Page
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,7 +22,6 @@ class _UserCartPageState extends State<UserCartPage> {
   final _db = DatabaseService();
   final String? _uid = FirebaseAuth.instance.currentUser?.uid;
 
-  _Transport _transport = _Transport.none;
   bool _clearing = false;
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -89,12 +45,6 @@ class _UserCartPageState extends State<UserCartPage> {
     } else {
       await _db.updateCartItemQty(uid, cartItemId, newQty);
     }
-  }
-
-  Future<void> _removeItem(String cartItemId) async {
-    final uid = _uid;
-    if (uid == null) return;
-    await _db.removeCartItem(uid, cartItemId);
   }
 
   Future<void> _confirmClearCart() async {
@@ -370,7 +320,7 @@ class _UserCartPageState extends State<UserCartPage> {
     final shopName = firstData['shopName'] as String? ?? 'Laundry Shop';
     final shopImageUrl = firstData['shopImageUrl'] as String?;
     final subtotal = _subtotal(docs);
-    final grandTotal = subtotal + _transport.fee;
+    final grandTotal = subtotal + 1.000;
 
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
@@ -423,11 +373,6 @@ class _UserCartPageState extends State<UserCartPage> {
 
         const _SectionDivider(),
 
-        // ── Transport ────────────────────────────────────────────────────────
-        const _SectionHeader(title: 'Transport'),
-        ..._Transport.values.map((t) => _buildTransportTile(t)),
-
-        const _SectionDivider(),
 
         // ── Order Summary ────────────────────────────────────────────────────
         const _SectionHeader(title: 'Order Summary'),
@@ -445,7 +390,7 @@ class _UserCartPageState extends State<UserCartPage> {
                     label: 'Subtotal (${docs.length} item${docs.length == 1 ? '' : 's'})',
                     value: subtotal),
                 SizedBox(height: 8),
-                _SummaryLine(label: 'Transport', value: _transport.fee),
+                _SummaryLine(label: 'Transport', value: 1.000),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
                   child: Divider(height: 1, color: context.uiDivider),
@@ -471,38 +416,6 @@ class _UserCartPageState extends State<UserCartPage> {
             ),
           ),
         ),
-
-        // ── Coming soon notice ───────────────────────────────────────────────
-        Padding(
-          padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Container(
-            padding:
-                EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: context.uiPrimary.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                  color: context.uiPrimary.withValues(alpha: 0.25)),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline_rounded,
-                    size: 16, color: context.uiPrimary),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Online payment is coming soon. Stay tuned!',
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: context.uiTextSecondary,
-                        fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
         SizedBox(height: 110), // space for bottom bar
       ],
     );
@@ -658,64 +571,9 @@ class _UserCartPageState extends State<UserCartPage> {
     );
   }
 
-  Widget _buildTransportTile(_Transport option) {
-    final isSelected = option == _transport;
-    return InkWell(
-      onTap: () => setState(() => _transport = option),
-      child: Padding(
-        padding:
-            EdgeInsets.symmetric(horizontal: 20, vertical: 11),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    option.label,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w700
-                          : FontWeight.w500,
-                      color: context.uiTextPrimary,
-                    ),
-                  ),
-                  Text(option.subtitle,
-                      style: TextStyle(
-                          fontSize: 11, color: context.uiTextHint)),
-                ],
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected
-                    ? context.uiPrimary
-                    : Colors.transparent,
-                border: Border.all(
-                  color: isSelected
-                      ? context.uiPrimary
-                      : context.uiTextHint,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Icon(Icons.circle,
-                      size: 10, color: Colors.white)
-                  : null,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildBottomBar(List<QueryDocumentSnapshot> docs) {
-    final grandTotal = _subtotal(docs) + _transport.fee;
+    final grandTotal = _subtotal(docs) + 1.000;
     return Container(
       padding: EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(

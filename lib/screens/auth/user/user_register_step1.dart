@@ -95,7 +95,7 @@ class _UserRegisterStep1State extends State<UserRegisterStep1> {
                                     color: Colors.grey, size: 20),
                                 onPressed: () {
                                   FocusScope.of(context).unfocus();
-                                  Navigator.pushReplacementNamed(context, AppRoutes.register);
+                                  Navigator.pop(context);
                                 },
                               ),
                             ),

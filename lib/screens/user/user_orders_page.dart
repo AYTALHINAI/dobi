@@ -6,6 +6,7 @@ import '../../theme/user_theme.dart';
 import '../../database.dart';
 import '../../routes/app_routes.dart';
 import 'feedback_page.dart';
+import 'order_tracking_page.dart';
 
 class UserOrdersPage extends StatelessWidget {
   const UserOrdersPage({super.key});
@@ -97,10 +98,11 @@ class UserOrdersPage extends StatelessWidget {
               final data = docs[index].data() as Map<String, dynamic>;
               return _OrderCard(
                 orderData: data,
+                docId: docs[index].id,
                 onTap: () {
                   Navigator.push(
                     context,
-                    userPageRoute((_) => OrderDetailPage(orderData: data)),
+                    userPageRoute((_) => OrderTrackingPage(orderId: docs[index].id)),
                   );
                 },
               );
@@ -114,31 +116,41 @@ class UserOrdersPage extends StatelessWidget {
 
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> orderData;
+  final String docId;
   final VoidCallback onTap;
 
-  const _OrderCard({required this.orderData, required this.onTap});
+  const _OrderCard({required this.orderData, required this.docId, required this.onTap});
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'pending': return Colors.orange;
-      case 'picked': return Colors.blue;
-      case 'in_progress': return Colors.indigo;
-      case 'ready': return Colors.teal;
-      case 'delivered': return Colors.green;
-      default: return Colors.grey;
+      case 'order_placed':           return Colors.orange;
+      case 'driver_assigned':            return Colors.blue;
+      case 'heading_to_shop':         return Colors.orange.shade700;
+      case 'at_shop_processing':       return Colors.indigo;
+      case 'ready_for_pickup':             return Colors.teal;
+      case 'driver_heading_to_shop_delivery': return Colors.teal.shade700;
+      case 'heading_to_customer':  return Colors.purple;
+      case 'completed':         return Colors.green;
+      case 'overdue':           return Colors.red;
+      default:                  return Colors.grey;
     }
   }
 
   String _formatStatus(String status) {
     switch (status) {
-      case 'in_progress': return 'In Progress';
+      case 'driver_assigned':           return 'Driver on the Way';
+      case 'heading_to_shop':        return 'Heading to Shop';
+      case 'at_shop_processing':     return 'Being Cleaned';
+      case 'driver_heading_to_shop_delivery': return 'Driver Collecting';
+      case 'heading_to_customer': return 'Out for Delivery';
+      case 'overdue':          return 'Overdue';
       default: return status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = orderData['status'] ?? 'pending';
+    final status = orderData['status'] ?? 'order_placed';
     final shopName = orderData['shopName'] ?? 'Unknown Shop';
     final totalPrice = orderData['totalPrice'] ?? 0.0;
     final createdAtRaw = orderData['createdAt'];
@@ -225,18 +237,18 @@ class OrderDetailPage extends StatelessWidget {
 
   const OrderDetailPage({super.key, required this.orderData});
 
-  List<String> get _statusSteps => ['pending', 'picked', 'in_progress', 'ready', 'delivered'];
+  List<String> get _statusSteps => ['order_placed', 'driver_assigned', 'at_shop_processing', 'ready_for_pickup', 'completed'];
 
   String _formatStatus(String status) {
     switch (status) {
-      case 'in_progress': return 'In Progress';
+      case 'at_shop_processing': return 'In Progress';
       default: return status.isNotEmpty ? status[0].toUpperCase() + status.substring(1) : status;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = orderData['status'] ?? 'pending';
+    final status = orderData['status'] ?? 'order_placed';
     final items = List<Map<String, dynamic>>.from(orderData['items'] ?? []);
     final shopName = orderData['shopName'] ?? 'Unknown Shop';
     final paymentStatus = orderData['paymentStatus'] ?? 'unpaid';
@@ -457,15 +469,21 @@ class OrderDetailPage extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Feedback Button
-            if (status == 'delivered')
+            if (status == 'completed')
               if (feedbackGiven)
-                const Center(
-                  child: Text(
-                    'You have already rated this order ✓',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    onPressed: () => _showFeedbackBottomSheet(context, orderId, shopName),
+                    child: Text(
+                      'View Feedback',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.uiTextPrimary),
                     ),
                   ),
                 )
@@ -497,6 +515,167 @@ class OrderDetailPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showFeedbackBottomSheet(BuildContext context, String orderId, String shopName) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return FutureBuilder<DocumentSnapshot?>(
+          future: DatabaseService().getFeedbackForOrder(orderId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: context.uiSurface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: const Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
+              return Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  color: context.uiSurface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Center(
+                  child: Text('Feedback not found', style: TextStyle(color: context.uiTextPrimary)),
+                ),
+              );
+            }
+
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            final rating = data['rating']?.toString() ?? '0';
+            final comment = data['comment']?.toString() ?? '';
+            final shopReply = data['shopReply']?.toString();
+
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: context.uiSurface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Your Feedback',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: context.uiTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, color: Color(0xFFF5C518), size: 24),
+                      const SizedBox(width: 8),
+                      Text(
+                        rating,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: context.uiTextPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (comment.isNotEmpty)
+                    Text(
+                      comment,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: context.uiTextSecondary,
+                      ),
+                    ),
+                  if (shopReply != null && shopReply.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).brightness == Brightness.dark 
+                            ? Colors.grey.shade900 
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: context.uiDivider,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.store, size: 16, color: Colors.blue),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Reply from $shopName',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: context.uiTextPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            shopReply,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: context.uiTextSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey.shade200,
+                        foregroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

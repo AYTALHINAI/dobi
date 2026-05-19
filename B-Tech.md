@@ -62,3 +62,14 @@ Pay → Order created in Firestore (status: pending, paymentStatus: paid) →
 Shop Owner confirms → processes → marks ready →
 Driver accepts → delivers →
 Customer tracks everything in Orders tab
+
+Updated Full Order Lifecycle
+Step	Status	Who presses what	Tracker lights up
+1	pending	Customer places order	✅ Step 1
+2	picked	Driver accepts pickup	✅ Step 2 "Driver Assigned"
+3	collected	Driver taps "Collected from Customer ✓"	✅ Step 3 "Laundry Collected"
+4	in_progress	Shop taps Start Processing	✅ Step 4 "Being Cleaned"
+5	ready	Shop taps Mark as Ready	✅ Step 5 "Ready for Delivery"
+6	out_for_delivery	Driver accepts delivery	✅ Step 6 "Out for Delivery"
+7	delivered	Driver taps Mark as Delivered	✅ Step 7 "Delivered"ASD
+

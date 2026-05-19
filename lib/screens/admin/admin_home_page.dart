@@ -64,14 +64,14 @@ class AdminHomePage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Orders — not functional yet, shown greyed out
+                    // Orders count
                     Expanded(
-                      child: _StaticStatCard(
+                      child: _LiveStatCard(
                         title: 'Orders',
                         icon: Icons.list_alt,
                         color: const Color(0xFF4CAF50),
-                        count: '—',
-                        tooltip: 'Coming soon',
+                        stream: db.watchTotalOrders(),
+                        tooltip: 'Total orders placed',
                       ),
                     ),
                   ],
@@ -83,14 +83,21 @@ class AdminHomePage extends StatelessWidget {
 
             // ── Navigation buttons ─────────────────────────────────────────
             _NavButton(
-              title: 'Manage drivers & requests',
+              title: 'View Shop Feedbacks',
+              icon: Icons.feedback_outlined,
+              onTap: () =>
+                  Navigator.pushNamed(context, AppRoutes.adminShopFeedbacks),
+            ),
+            const SizedBox(height: 12),
+            _NavButton(
+              title: 'Approve Applicants',
               icon: Icons.delivery_dining,
               onTap: () =>
                   Navigator.pushNamed(context, AppRoutes.adminManageRequests),
             ),
             const SizedBox(height: 12),
             _NavButton(
-              title: 'Approved Shops & Drivers',
+              title: 'Manage All Users',
               icon: Icons.verified_user_outlined,
               onTap: () =>
                   Navigator.pushNamed(context, AppRoutes.adminApprovedMembers),

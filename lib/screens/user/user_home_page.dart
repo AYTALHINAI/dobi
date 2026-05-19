@@ -225,66 +225,7 @@ class _UserHomePageState extends State<UserHomePage> {
                 ),
 
                 SliverToBoxAdapter(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: DatabaseService().getApprovedShops(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Center(child: CircularProgressIndicator()),
-                        );
-                      }
-                      final docs = snapshot.data?.docs ?? [];
-                      if (docs.isEmpty) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 40),
-                          child: Center(child: Text('No shops available yet')),
-                        );
-                      }
-                      return SizedBox(
-                        height: 190,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          itemCount: docs.length,
-                          itemBuilder: (context, index) {
-                            final data = docs[index].data() as Map<String, dynamic>;
-                            final shopId = docs[index].id;
-                            final shopName = data['shopName'] ?? 'Unknown Shop';
-                            final wilayat = data['wilayat'] ?? '';
-                            final imageUrl = data['profileImageUrl'] as String?;
-                            // alternating colors for the cards
-                            final color = index % 2 == 0 ? const Color(0xFFB8A98C) : const Color(0xFFC4B49A);
-
-                            return Padding(
-                              padding: EdgeInsets.only(right: index < docs.length - 1 ? 14 : 0),
-                              child: SizedBox(
-                                width: 160,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      userPageRoute((_) => UserBookingPage(
-                                        shopId: shopId,
-                                        shopData: data,
-                                      )),
-                                    );
-                                  },
-                                  child: _PopularServiceCard(
-                                    shopId: shopId,
-                                    shopName: shopName,
-                                    wilayat: wilayat,
-                                    color: color,
-                                    imageUrl: imageUrl,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                  child: const _PopularServicesSection(),
                 ),
               ],
             ],
@@ -429,7 +370,7 @@ class _NearbyShopsSectionState extends State<_NearbyShopsSection> {
         }
 
         return SizedBox(
-          height: 175,
+          height: 115,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: 20),
@@ -438,12 +379,11 @@ class _NearbyShopsSectionState extends State<_NearbyShopsSection> {
               final shop = shops[i];
               final shopId = shop['id'] as String;
               final name = shop['shopName'] ?? 'Laundry Shop';
-              final wilayat = shop['wilayat'] ?? '';
               final imageUrl = shop['shopImageUrl'] as String?;
               final color = _cardColors[i % _cardColors.length];
 
               return Padding(
-                padding: EdgeInsets.only(right: i < shops.length - 1 ? 14 : 0),
+                padding: EdgeInsets.only(right: i < shops.length - 1 ? 16 : 0),
                 child: GestureDetector(
                   onTap: () => Navigator.push(
                     context,
@@ -452,105 +392,59 @@ class _NearbyShopsSectionState extends State<_NearbyShopsSection> {
                       shopData: shop,
                     )),
                   ),
-                  child: Container(
-                    width: 160,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.01),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        // Background image (if any)
-                        if (imageUrl != null)
-                          Positioned.fill(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Image.network(
-                                imageUrl,
-                                fit: BoxFit.cover,
-                                color: context.uiTextHint,
-                                colorBlendMode: BlendMode.darken,
-                                errorBuilder: (_, __, ___) =>
-                                    SizedBox.shrink(),
-                              ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 72,
+                        height: 72,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color,
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                        // Gradient overlay
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.01),
-                                ],
-                              ),
-                            ),
+                          ],
+                          border: Border.all(
+                            color: context.uiPrimary.withValues(alpha: 0.1),
+                            width: 1.5,
                           ),
                         ),
-                        // Content
-                        Positioned(
-                          bottom: 12,
-                          left: 12,
-                          right: 12,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
+                        child: imageUrl != null && imageUrl.isNotEmpty
+                            ? ClipOval(
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                      Icons.store_mall_directory_outlined,
+                                      color: Colors.white, size: 28),
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              )
+                            : Center(
+                                child: Icon(Icons.store_mall_directory_outlined,
+                                    color: Colors.white, size: 28),
                               ),
-                              if (wilayat.isNotEmpty) ...[
-                                SizedBox(height: 3),
-                                Row(
-                                  children: [
-                                    Icon(Icons.location_on_outlined,
-                                        size: 11, color: Colors.white70),
-                                    SizedBox(width: 3),
-                                    Flexible(
-                                      child: Text(
-                                        wilayat,
-                                        style: TextStyle(
-                                          color: Colors.white70,
-                                          fontSize: 11,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ],
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 76,
+                        child: Text(
+                          name,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: context.uiTextPrimary,
+                            height: 1.2,
                           ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        // Tap ripple indicator
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 16,
-                            color: Colors.white.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -781,12 +675,143 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-// ── Popular service card ───────────────────────────────────────────────────────
+// ── Popular service section & card ──────────────────────────────────────────────
+class _PopularServicesSection extends StatefulWidget {
+  const _PopularServicesSection();
+
+  @override
+  State<_PopularServicesSection> createState() => _PopularServicesSectionState();
+}
+
+class _PopularServicesSectionState extends State<_PopularServicesSection> {
+  final _db = DatabaseService();
+  late final Future<List<Map<String, dynamic>>> _future;
+
+  static const List<Color> _cardColors = [
+    Color(0xFF2C6B3F),
+    Color(0xFF1F3A6E),
+    Color(0xFF8E3A3A),
+    Color(0xFF5C3A8E),
+    Color(0xFF2C617A),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _loadPopularShops();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPopularShops() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return [];
+
+    String? userWilayat;
+    try {
+      final userDoc = await _db.getUserDoc(uid);
+      if (userDoc.exists) {
+        final data = userDoc.data()! as Map<String, dynamic>;
+        userWilayat = (data['wilayat'] as String?)?.trim();
+      }
+    } catch (_) {}
+
+    if (userWilayat == null || userWilayat.isEmpty) return [];
+
+    final snap = await _db.getApprovedShopsStream().first;
+    final matching = snap.docs
+        .map((d) => {'id': d.id, ...d.data() as Map<String, dynamic>})
+        .where((d) =>
+            (d['wilayat'] as String?)?.toLowerCase().trim() ==
+            userWilayat!.toLowerCase())
+        .toList();
+
+    List<Map<String, dynamic>> ratedShops = [];
+    for (var shop in matching) {
+      final rating = await _db.getShopAverageRatingFuture(shop['id']);
+      if (rating > 0) {
+        shop['averageRating'] = rating;
+        ratedShops.add(shop);
+      }
+    }
+
+    ratedShops.sort((a, b) => (b['averageRating'] as double).compareTo(a['averageRating'] as double));
+
+    return ratedShops.take(5).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final shops = snapshot.data ?? [];
+        if (shops.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(
+              child: Text(
+                'No popular shops available yet in your area',
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ),
+          );
+        }
+        return SizedBox(
+          height: 220,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            itemCount: shops.length,
+            itemBuilder: (context, index) {
+              final shop = shops[index];
+              final shopId = shop['id'] as String;
+              final shopName = shop['shopName'] ?? 'Unknown Shop';
+              final wilayat = shop['wilayat'] ?? '';
+              final imageUrl = shop['shopImageUrl'] as String?;
+              final rating = shop['averageRating'] as double;
+              final color = _cardColors[index % _cardColors.length];
+
+              return Padding(
+                padding: EdgeInsets.only(right: index < shops.length - 1 ? 16 : 0),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      userPageRoute((_) => UserBookingPage(
+                            shopId: shopId,
+                            shopData: shop,
+                          )),
+                    );
+                  },
+                  child: _PopularServiceCard(
+                    shopId: shopId,
+                    shopName: shopName,
+                    wilayat: wilayat,
+                    rating: rating,
+                    color: color,
+                    imageUrl: imageUrl,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _PopularServiceCard extends StatelessWidget {
   const _PopularServiceCard({
     required this.shopId,
     required this.shopName,
     required this.wilayat,
+    required this.rating,
     required this.color,
     this.imageUrl,
   });
@@ -794,91 +819,122 @@ class _PopularServiceCard extends StatelessWidget {
   final String shopId;
   final String shopName;
   final String wilayat;
+  final double rating;
   final Color color;
   final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 120,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.4),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+    return Container(
+      width: 200,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          if (imageUrl != null && imageUrl!.isNotEmpty)
+            Positioned.fill(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.network(
+                  imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
-            ],
+            ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withValues(alpha: 0.8),
+                  ],
+                  stops: const [0.4, 1.0],
+                ),
+              ),
+            ),
           ),
-          child: Center(
-            child: imageUrl != null && imageUrl!.isNotEmpty
-                ? CircleAvatar(
-                    radius: 30,
-                    backgroundImage: NetworkImage(imageUrl!),
-                    backgroundColor: Colors.white24,
-                  )
-                : CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white24,
-                    child: Icon(Icons.store_mall_directory_outlined,
-                        color: Colors.white70, size: 30),
-                  ),
-          ),
-        ),
-        SizedBox(height: 8),
-        Row(
-          children: [
-            StreamBuilder<double>(
-              stream: DatabaseService().getShopAverageRating(shopId),
-              builder: (context, snapshot) {
-                final rating = snapshot.data ?? 0.0;
-                if (rating == 0.0) {
-                  return Text(
-                    'No reviews yet',
-                    style: TextStyle(
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white24, width: 0.5),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    rating.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: context.uiTextSecondary,
+                      fontWeight: FontWeight.w700,
                     ),
-                  );
-                }
-                return Text(
-                  '${rating.toStringAsFixed(1)} ⭐',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: context.uiTextPrimary,
                   ),
-                );
-              },
+                ],
+              ),
             ),
-            const Spacer(),
-            Text(
-              wilayat,
-              style: TextStyle(fontSize: 11, color: context.uiTextSecondary),
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(width: 4),
-            Icon(Icons.location_on_outlined,
-                size: 14, color: context.uiTextSecondary),
-          ],
-        ),
-        SizedBox(height: 2),
-        Text(
-          shopName,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: context.uiTextPrimary,
           ),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+          Positioned(
+            bottom: 16,
+            left: 16,
+            right: 16,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  shopName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on_rounded, color: Colors.white70, size: 14),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        wilayat,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

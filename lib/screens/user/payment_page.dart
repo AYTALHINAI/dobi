@@ -1,9 +1,11 @@
+import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../database.dart';
 import '../../theme/user_theme.dart';
-import 'user_main_page.dart'; // To navigate back
+import 'order_tracking_page.dart';
+import 'payment_widgets.dart';
 
 class PaymentPage extends StatefulWidget {
   final String shopId;
@@ -24,184 +26,321 @@ class PaymentPage extends StatefulWidget {
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  String _selectedMethod = 'card'; // 'card' or 'wallet'
+  // ── UI state ────────────────────────────────────────────────────────────────
+  String _selectedMethod = 'card';
   bool _isProcessing = false;
 
-  // Scheduling
+  // ── Scheduling ──────────────────────────────────────────────────────────────
   DateTime? _selectedDate;
   String? _selectedTimeSlot;
 
-  // Form Controllers
-  final _cardNumberCtrl = TextEditingController();
-  final _expiryCtrl = TextEditingController();
-  final _cvvCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
+  // GlobalKey gives us access to CardPaymentFormState.validate()
+  final _cardFormKey = GlobalKey<CardPaymentFormState>();
 
-  final List<Map<String, String>> _timeSlots = [
-    {'title': 'Morning', 'time': '8:00 AM – 12:00 PM', 'icon': '🌅'},
-    {'title': 'Afternoon', 'time': '12:00 PM – 4:00 PM', 'icon': '☀️'},
-    {'title': 'Evening', 'time': '4:00 PM – 8:00 PM', 'icon': '🌆'},
+  // ── Time slot definitions ────────────────────────────────────────────────────
+  static const _timeSlots = [
+    {'title': 'Morning',   'time': '8:00 AM – 12:00 PM', 'icon': '🌅', 'startHour': 8,  'endHour': 12},
+    {'title': 'Afternoon', 'time': '12:00 PM – 4:00 PM',  'icon': '☀️', 'startHour': 12, 'endHour': 16},
+    {'title': 'Evening',   'time': '4:00 PM – 8:00 PM',  'icon': '🌆', 'startHour': 16, 'endHour': 20},
+    {'title': 'Night',     'time': '8:00 PM – 12:00 AM', 'icon': '🌙', 'startHour': 20, 'endHour': 24},
   ];
 
-  static const List<String> _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  static const List<String> _weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  static const _months   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  static const _weekdays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
 
-  String _formatDate(DateTime date) {
-    return '${_weekdays[date.weekday - 1]}, ${date.day} ${_months[date.month - 1]} ${date.year}';
+  // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  String _formatDate(DateTime d) =>
+      '${_weekdays[d.weekday - 1]}, ${d.day} ${_months[d.month - 1]} ${d.year}';
+
+  bool _isSlotDisabled(Map<String, dynamic> slot) {
+    if (_selectedDate == null) return false;
+    final now      = DateTime.now();
+    final today    = DateTime(now.year, now.month, now.day);
+    final selected = DateTime(_selectedDate!.year, _selectedDate!.month, _selectedDate!.day);
+    if (selected != today) return false;
+    final endHour = slot['endHour'] as int;
+    if (endHour >= 24) return false; // Night slot never disabled for today
+    return now.isAfter(DateTime(now.year, now.month, now.day, endHour));
   }
 
+  String _generateOrderRef() {
+    final now      = DateTime.now();
+    final datePart = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final suffix   = (10000 + Random().nextInt(90000)).toString();
+    return '#DOB-$datePart-$suffix';
+  }
+
+  // ── Payment processing ───────────────────────────────────────────────────────
+
   Future<void> _processPayment() async {
+    // Validate scheduling
     if (_selectedDate == null || _selectedTimeSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a pickup date and time slot.'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Please select a pickup date and time slot.'),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ));
       return;
     }
 
+    // Validate card form (if card selected)
     if (_selectedMethod == 'card') {
-      if (_cardNumberCtrl.text.isEmpty ||
-          _expiryCtrl.text.isEmpty ||
-          _cvvCtrl.text.isEmpty ||
-          _nameCtrl.text.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please fill all card details.'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+      if (!(_cardFormKey.currentState?.validate() ?? false)) return;
     }
 
-    setState(() {
-      _isProcessing = true;
-    });
-
-    // Simulate payment processing
+    setState(() => _isProcessing = true);
     await Future.delayed(const Duration(seconds: 2));
 
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
 
-      // Fetch user's fullName + shop's location in parallel
       final results = await Future.wait([
         FirebaseFirestore.instance.collection('users').doc(uid).get(),
-        FirebaseFirestore.instance.collection('shop_owners').doc(widget.shopId).get(),
+        FirebaseFirestore.instance.collection('shopOwners').doc(widget.shopId).get(),
       ]);
-      final userDoc = results[0];
-      final shopDoc = results[1];
 
-      final customerName    = userDoc.data()?['fullName']    ?? 'Customer';
-      final shopGovernorate = shopDoc.data()?['governorate'] ?? '';
-      final shopWilayat     = shopDoc.data()?['wilayat']     ?? '';
+      final customerData    = results[0].data() ?? {};
+      final shopData        = results[1].data() ?? {};
+      final customerName    = customerData['fullName']    ?? 'Customer';
+      final customerPhone   = customerData['phone']       ?? '';
+      final customerAddress = customerData['address']     ?? '';
+      final customerGov     = customerData['governorate'] ?? '';
+      final customerWilayat = customerData['wilayat']     ?? '';
+      final customerLat     = (customerData['latitude']  as num?)?.toDouble();
+      final customerLng     = (customerData['longitude'] as num?)?.toDouble();
+      final shopGovernorate = shopData['governorate']     ?? '';
+      final shopWilayat     = shopData['wilayat']         ?? '';
+      final shopLat         = (shopData['latitude']  as num?)?.toDouble();
+      final shopLng         = (shopData['longitude'] as num?)?.toDouble();
+      final shopAddress     = shopData['shopAddress']     ?? '';
+      final shopPhone       = shopData['phone']           ?? '';
 
-      // Format scheduledDate: 'Monday, 28 Apr · Morning (8:00 AM – 12:00 PM)'
       final slotData = _timeSlots.firstWhere((s) => s['title'] == _selectedTimeSlot);
-      final scheduledDateFormatted = '${_weekdays[_selectedDate!.weekday - 1]}, ${_selectedDate!.day} ${_months[_selectedDate!.month - 1]} · ${slotData['title']} (${slotData['time']})';
+      final scheduledDateFormatted =
+          '${_weekdays[_selectedDate!.weekday - 1]}, ${_selectedDate!.day} '
+          '${_months[_selectedDate!.month - 1]} · '
+          '${slotData['title']} (${slotData['time']})';
 
-      // Create order
-      await DatabaseService().placeOrder({
-        'userId': uid,
-        'shopId': widget.shopId,
-        'shopName': widget.shopName,
-        'shopGovernorate': shopGovernorate,
-        'shopWilayat': shopWilayat,
-        'items': widget.items,
-        'totalPrice': widget.totalPrice,
-        'scheduledDate': scheduledDateFormatted,
-        'status': 'pending',
-        'paymentStatus': 'paid',
-        'createdAt': Timestamp.now(),
-        'customerName': customerName,
+      final orderRef = _generateOrderRef();
+
+      // placeOrder returns a DocumentReference — capture its ID for tracking
+      final docRef = await FirebaseFirestore.instance
+          .collection('orders')
+          .add({
+        'userId':           uid,
+        'shopId':           widget.shopId,
+        'shopName':         widget.shopName,
+        'shopGovernorate':  shopGovernorate,
+        'shopWilayat':      shopWilayat,
+        'shopAddress':      shopAddress,
+        'shopLatitude':     shopLat,
+        'shopLongitude':    shopLng,
+        'items':            widget.items,
+        'totalPrice':       widget.totalPrice,
+        'scheduledDate':    scheduledDateFormatted,
+        'status':           'order_placed',
+        'paymentStatus':    'paid',
+        'createdAt':        Timestamp.now(),
+        'customerName':      customerName,
+        'customerPhone':     customerPhone,
+        'customerAddress':   customerAddress,
+        'customerGov':       customerGov,
+        'customerWilayat':   customerWilayat,
+        'customerLatitude':  customerLat,
+        'customerLongitude': customerLng,
+        'shopPhone':         shopPhone,
+        'orderRef':          orderRef,
       });
+      final orderId = docRef.id;
 
-      // Clear the cart since the order is placed
       await DatabaseService().clearCart(uid);
 
-      // Show success dialog
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Payment Successful! 🎉', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: const Text('Your order has been placed successfully.', style: TextStyle(fontSize: 16)),
-            actions: [
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to UserMainPage
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UserMainPage()),
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: context.uiPrimary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text('Track My Order'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (mounted) _showSuccessDialog(orderRef, scheduledDateFormatted, orderId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
         );
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
       }
     }
   }
+
+  void _showSuccessDialog(String orderRef, String scheduledDateFormatted, String orderId) {
+    // Capture theme values from the PAGE's context before showDialog.
+    // The dialog builder gets a different context (Navigator overlay)
+    // that does NOT carry UserTheme, causing "No UserTheme found".
+    final primary       = context.uiPrimary;
+    final textSecondary = context.uiTextSecondary;
+    final pageCtx       = context; // save page context for navigation after dialog
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72, height: 72,
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1), shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 44),
+            ),
+            const SizedBox(height: 16),
+            const Text('Order Confirmed!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 6),
+            const Text('Your laundry pickup has been scheduled.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14, color: Colors.grey)),
+            const SizedBox(height: 20),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+              decoration: BoxDecoration(
+                color: primary.withOpacity(0.07),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: primary.withOpacity(0.25)),
+              ),
+              child: Column(
+                children: [
+                  Text('ORDER REFERENCE',
+                      style: TextStyle(
+                          fontSize: 10, letterSpacing: 1.4, fontWeight: FontWeight.w700,
+                          color: primary.withOpacity(0.7))),
+                  const SizedBox(height: 4),
+                  Text(orderRef,
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold,
+                          color: primary, letterSpacing: 1.2)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              Icon(Icons.schedule, size: 16, color: textSecondary),
+              const SizedBox(width: 6),
+              Expanded(child: Text(scheduledDateFormatted,
+                  style: TextStyle(fontSize: 13, color: textSecondary))),
+            ]),
+            const SizedBox(height: 4),
+            Row(children: [
+              Icon(Icons.payments_rounded, size: 16, color: textSecondary),
+              const SizedBox(width: 6),
+              Text('${widget.totalPrice.toStringAsFixed(3)} OMR',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600,
+                      color: textSecondary)),
+            ]),
+            const SizedBox(height: 24),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  // Pop dialog, then replace the entire payment back-stack
+                  // with OrderTrackingPage so back lands on UserMainPage/Orders.
+                  Navigator.of(dialogCtx).pop();
+                  Navigator.pushAndRemoveUntil(
+                    pageCtx,
+                    userPageRoute(
+                      (_) => OrderTrackingPage(
+                        orderId: orderId,
+                        fromPayment: true,
+                      ),
+                    ),
+                    (route) => route.isFirst,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('Track My Order', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.uiBackground,
       appBar: AppBar(
-        title: Text('Checkout', style: TextStyle(color: context.uiTextPrimary, fontWeight: FontWeight.w800)),
+        title: Text('Checkout',
+            style: TextStyle(color: context.uiTextPrimary, fontWeight: FontWeight.w800)),
         backgroundColor: context.uiBackground,
         elevation: 0,
         iconTheme: IconThemeData(color: context.uiTextPrimary),
       ),
       body: _isProcessing
-          ? Center(child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
+          ? Center(
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 CircularProgressIndicator(color: context.uiPrimary),
                 const SizedBox(height: 16),
-                Text('Processing Payment...', style: TextStyle(color: context.uiTextSecondary, fontSize: 16)),
-              ],
-            ))
+                Text('Processing Payment...',
+                    style: TextStyle(color: context.uiTextSecondary, fontSize: 16)),
+              ]),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildOrderSummary(),
+                  // Order Summary
+                  OrderSummaryCard(
+                    shopName:   widget.shopName,
+                    items:      widget.items,
+                    totalPrice: widget.totalPrice,
+                  ),
                   const SizedBox(height: 24),
-                  
-                  Text('Pickup Scheduling', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.uiTextPrimary)),
+
+                  // Scheduling
+                  Text('Pickup Scheduling',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.uiTextPrimary)),
                   const SizedBox(height: 16),
                   _buildSchedulingSection(),
                   const SizedBox(height: 24),
 
-                  Text('Payment Method', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.uiTextPrimary)),
+                  // Payment method
+                  Text('Payment Method',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.uiTextPrimary)),
                   const SizedBox(height: 16),
-                  _buildPaymentMethods(),
+                  PaymentMethodCard(
+                    id: 'card', title: 'Credit / Debit Card',
+                    icon: Icons.credit_card,
+                    isSelected: _selectedMethod == 'card',
+                    onTap: () => setState(() => _selectedMethod = 'card'),
+                  ),
+                  const SizedBox(height: 12),
+                  PaymentMethodCard(
+                    id: 'wallet', title: 'Pay with Cash',
+                    icon: Icons.payments_rounded,
+                    isSelected: _selectedMethod == 'wallet',
+                    onTap: () => setState(() => _selectedMethod = 'wallet'),
+                  ),
                   const SizedBox(height: 24),
-                  if (_selectedMethod == 'card') _buildCardForm() else _buildWalletMessage(),
+
+                  // Card form or cash message
+                  if (_selectedMethod == 'card')
+                    CardPaymentForm(key: _cardFormKey)
+                  else
+                    const CashPaymentMessage(),
+
                   const SizedBox(height: 40),
                 ],
               ),
@@ -224,11 +363,14 @@ class _PaymentPageState extends State<PaymentPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Confirm Payment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text('Confirm Payment',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ),
     );
   }
+
+  // ── Scheduling section ───────────────────────────────────────────────────────
 
   Widget _buildSchedulingSection() {
     return Container(
@@ -241,8 +383,9 @@ class _PaymentPageState extends State<PaymentPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date Picker
-          Text('Pickup Date', style: TextStyle(fontSize: 14, color: context.uiTextSecondary, fontWeight: FontWeight.w600)),
+          // Date picker
+          Text('Pickup Date',
+              style: TextStyle(fontSize: 14, color: context.uiTextSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           InkWell(
             onTap: () async {
@@ -251,19 +394,27 @@ class _PaymentPageState extends State<PaymentPage> {
                 initialDate: _selectedDate ?? DateTime.now(),
                 firstDate: DateTime.now(),
                 lastDate: DateTime.now().add(const Duration(days: 30)),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      colorScheme: ColorScheme.light(
-                        primary: context.uiPrimary,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
+                builder: (context, child) => Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: ColorScheme.light(primary: context.uiPrimary),
+                  ),
+                  child: child!,
+                ),
               );
               if (date != null) {
-                setState(() => _selectedDate = date);
+                setState(() {
+                  _selectedDate = date;
+                  // Clear slot if it became disabled for the new date
+                  if (_selectedTimeSlot != null) {
+                    final slot = _timeSlots.firstWhere(
+                      (s) => s['title'] == _selectedTimeSlot,
+                      orElse: () => const {},
+                    );
+                    if (slot.isNotEmpty && _isSlotDisabled(slot)) {
+                      _selectedTimeSlot = null;
+                    }
+                  }
+                });
               }
             },
             child: Container(
@@ -289,225 +440,16 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           const SizedBox(height: 20),
 
-          // Time Slots
-          Text('Time Slot', style: TextStyle(fontSize: 14, color: context.uiTextSecondary, fontWeight: FontWeight.w600)),
+          // Time slots
+          Text('Time Slot',
+              style: TextStyle(fontSize: 14, color: context.uiTextSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Column(
-            children: _timeSlots.map((slot) {
-              final isSelected = _selectedTimeSlot == slot['title'];
-              return GestureDetector(
-                onTap: () => setState(() => _selectedTimeSlot = slot['title']),
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: isSelected ? context.uiPrimary.withOpacity(0.1) : context.uiBackground,
-                    border: Border.all(
-                      color: isSelected ? context.uiPrimary : Colors.transparent,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(slot['icon']!, style: const TextStyle(fontSize: 20)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              slot['title']!,
-                              style: TextStyle(
-                                color: isSelected ? context.uiPrimary : context.uiTextPrimary,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              slot['time']!,
-                              style: TextStyle(
-                                color: context.uiTextSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (isSelected)
-                        Icon(Icons.check_circle, color: context.uiPrimary, size: 20)
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrderSummary() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.uiSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.uiDivider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.storefront, color: context.uiPrimary),
-              const SizedBox(width: 8),
-              Text(
-                widget.shopName,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.uiTextPrimary),
-              ),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(),
-          ),
-          ...widget.items.map((item) {
-            final name = item['serviceName'];
-            final qty = item['quantity'];
-            final price = item['price'];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('$name x$qty', style: TextStyle(color: context.uiTextSecondary)),
-                  Text('${(price * qty).toStringAsFixed(3)} OMR', style: TextStyle(color: context.uiTextPrimary, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            );
-          }).toList(),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
-            child: Divider(),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.uiTextPrimary)),
-              Text('${widget.totalPrice.toStringAsFixed(3)} OMR', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.uiPrimary)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentMethods() {
-    return Column(
-      children: [
-        _buildMethodCard('card', 'Credit / Debit Card', Icons.credit_card),
-        const SizedBox(height: 12),
-        _buildMethodCard('wallet', 'Apple Pay / Google Pay', Icons.phone_iphone),
-      ],
-    );
-  }
-
-  Widget _buildMethodCard(String id, String title, IconData icon) {
-    final isSelected = _selectedMethod == id;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedMethod = id),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.uiSurface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? context.uiPrimary : context.uiDivider, width: isSelected ? 2 : 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: isSelected ? context.uiPrimary : context.uiTextSecondary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(title, style: TextStyle(fontSize: 16, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: context.uiTextPrimary)),
-            ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: context.uiPrimary)
-            else
-              Icon(Icons.circle_outlined, color: context.uiDivider),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardForm() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.uiSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.uiDivider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildTextField(_cardNumberCtrl, 'Card Number', 'XXXX XXXX XXXX XXXX', TextInputType.number),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _buildTextField(_expiryCtrl, 'Expiry Date', 'MM/YY', TextInputType.datetime)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildTextField(_cvvCtrl, 'CVV', '123', TextInputType.number)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(_nameCtrl, 'Cardholder Name', 'John Doe', TextInputType.name),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController ctrl, String label, String hint, TextInputType type) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, color: context.uiTextSecondary, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: ctrl,
-          keyboardType: type,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: context.uiTextHint),
-            filled: true,
-            fillColor: context.uiBackground,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWalletMessage() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: context.uiSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.uiDivider),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.account_balance_wallet_rounded, size: 64, color: context.uiPrimary.withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text(
-            'You will be redirected to complete payment securely.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: context.uiTextSecondary, fontSize: 16),
-          ),
+          ...(_timeSlots).map((slot) => TimeSlotTile(
+                slot:       slot,
+                isSelected: _selectedTimeSlot == slot['title'],
+                isDisabled: _isSlotDisabled(slot),
+                onTap:      () => setState(() => _selectedTimeSlot = slot['title'] as String),
+              )),
         ],
       ),
     );

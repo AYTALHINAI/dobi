@@ -230,39 +230,6 @@ class _UserBookingPageState extends State<UserBookingPage> {
             ),
           ),
 
-          // ── Transport note ────────────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: context.uiPrimary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: context.uiPrimary.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.local_shipping_outlined,
-                        size: 16, color: context.uiPrimary),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Transport options can be selected in your cart.',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: context.uiTextSecondary,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),

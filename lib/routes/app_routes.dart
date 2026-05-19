@@ -45,6 +45,10 @@ import '../screens/admin/manage_requests_page.dart';
 
 // ADMIN APPROVED MEMBERS
 import '../screens/admin/admin_approved_members_page.dart';
+import '../screens/admin/admin_customer_detail_page.dart';
+
+// ADMIN SHOP FEEDBACKS
+import '../screens/admin/admin_shop_feedbacks_list_page.dart';
 
 // USER THEME
 import '../theme/user_theme.dart';
@@ -87,6 +91,8 @@ class AppRoutes {
   static const String adminShopOwnerDetail = '/admin/shop-owner-detail';
   static const String adminManageRequests = '/admin/manage-requests';
   static const String adminApprovedMembers = '/admin/approved-members';
+  static const String adminCustomerDetail = '/admin/customer-detail';
+  static const String adminShopFeedbacks = '/admin/shop-feedbacks';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -153,11 +159,21 @@ class AppRoutes {
       case adminApprovedMembers:
         return MaterialPageRoute(
             builder: (_) => const AdminApprovedMembersPage());
+      case adminCustomerDetail:
+        final customerData = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+            builder: (_) => AdminCustomerDetailPage(customerData: customerData));
+
+    // ADMIN SHOP FEEDBACKS
+      case adminShopFeedbacks:
+        return MaterialPageRoute(
+            builder: (_) => const AdminShopFeedbacksListPage());
 
     // HOME PAGES
       case adminHome:
         return MaterialPageRoute(builder: (_) => const AdminHomePage());
       case userHome:
+        final initialIndex = settings.arguments is int ? settings.arguments as int : 0;
         return MaterialPageRoute(
           builder: (_) => UserTheme(
             notifier: userThemeNotifier,
@@ -171,7 +187,7 @@ class AppRoutes {
                   child: child!,
                 );
               },
-              child: const UserMainPage(),
+              child: UserMainPage(initialIndex: initialIndex),
             ),
           ),
         );

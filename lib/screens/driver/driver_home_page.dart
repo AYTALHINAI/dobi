@@ -24,7 +24,14 @@ class _DriverHomePageState extends State<DriverHomePage> {
     }
 
     final tabs = [
-      DriverAvailableOrdersPage(uid: _uid!),
+      DriverAvailableOrdersPage(
+        uid: _uid!,
+        onNavigateToDeliveries: () {
+          setState(() {
+            _currentIndex = 1;
+          });
+        },
+      ),
       DriverMyDeliveriesPage(uid: _uid!),
       DriverHistoryPage(uid: _uid!),
     ];
