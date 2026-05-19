@@ -23,6 +23,8 @@ import '../screens/auth/driver/driver_registration_model.dart';
 import '../screens/admin/admin_home_page.dart';
 import '../screens/user/user_main_page.dart';
 import '../screens/user/user_personal_info_page.dart';
+import '../screens/user/notification_settings_page.dart';
+import '../screens/user/notifications_list_page.dart';
 import '../screens/driver/driver_home_page.dart';
 import '../screens/shopOwner/shopOwner_home_page.dart';
 
@@ -93,6 +95,9 @@ class AppRoutes {
   static const String adminApprovedMembers = '/admin/approved-members';
   static const String adminCustomerDetail = '/admin/customer-detail';
   static const String adminShopFeedbacks = '/admin/shop-feedbacks';
+
+  static const String notificationSettings = '/user/notification-settings';
+  static const String notificationsList = '/user/notifications';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -212,6 +217,44 @@ class AppRoutes {
                 );
               },
               child: const UserPersonalInfoPage(isSetupMode: true),
+            ),
+          ),
+        );
+
+      case notificationSettings:
+        return MaterialPageRoute(
+          builder: (_) => UserTheme(
+            notifier: userThemeNotifier,
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: userThemeNotifier,
+              builder: (context, mode, child) {
+                return Theme(
+                  data: mode == ThemeMode.dark
+                      ? UserTheme.darkTheme
+                      : UserTheme.lightTheme,
+                  child: child!,
+                );
+              },
+              child: const NotificationSettingsPage(),
+            ),
+          ),
+        );
+
+      case notificationsList:
+        return MaterialPageRoute(
+          builder: (_) => UserTheme(
+            notifier: userThemeNotifier,
+            child: ValueListenableBuilder<ThemeMode>(
+              valueListenable: userThemeNotifier,
+              builder: (context, mode, child) {
+                return Theme(
+                  data: mode == ThemeMode.dark
+                      ? UserTheme.darkTheme
+                      : UserTheme.lightTheme,
+                  child: child!,
+                );
+              },
+              child: const NotificationsListPage(),
             ),
           ),
         );

@@ -154,6 +154,7 @@ class _PaymentPageState extends State<PaymentPage> {
       });
       final orderId = docRef.id;
 
+      await DatabaseService().notifyOrderStatus(orderId, 'order_placed');
       await DatabaseService().clearCart(uid);
 
       if (mounted) _showSuccessDialog(orderRef, scheduledDateFormatted, orderId);

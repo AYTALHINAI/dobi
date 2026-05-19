@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../database.dart';
 import 'driver_widgets.dart';
 
 class DriverMyDeliveriesPage extends StatelessWidget {
@@ -261,6 +262,7 @@ class _ActiveJobCardState extends State<_ActiveJobCard> {
         'status': 'heading_to_shop',
         'collectedAt': Timestamp.now(),
       });
+      await DatabaseService().notifyOrderStatus(widget.orderDoc.id, 'heading_to_shop');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -326,6 +328,7 @@ class _ActiveJobCardState extends State<_ActiveJobCard> {
         'status': 'heading_to_customer',
         'shopCollectedAt': Timestamp.now(),
       });
+      await DatabaseService().notifyOrderStatus(widget.orderDoc.id, 'heading_to_customer');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -379,6 +382,7 @@ class _ActiveJobCardState extends State<_ActiveJobCard> {
         'status': 'completed',
         'deliveredAt': Timestamp.now(),
       });
+      await DatabaseService().notifyOrderStatus(widget.orderDoc.id, 'completed');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1168,14 +1172,17 @@ class _DestinationCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(label,
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: isCurrentLeg
-                                  ? accentColor
-                                  : Colors.grey.shade500,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3)),
+                      Flexible(
+                        child: Text(label,
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: isCurrentLeg
+                                    ? accentColor
+                                    : Colors.grey.shade500,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3),
+                            overflow: TextOverflow.ellipsis),
+                      ),
                       if (isCurrentLeg) ...[
                         const SizedBox(width: 6),
                         Container(

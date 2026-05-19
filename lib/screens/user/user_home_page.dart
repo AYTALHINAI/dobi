@@ -7,6 +7,7 @@ import '../../theme/user_theme.dart';
 import 'user_category_page.dart';
 import 'user_booking_page.dart';
 import 'user_cart_page.dart';
+import 'notifications_list_page.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -58,12 +59,22 @@ class _UserHomePageState extends State<UserHomePage> {
                     Image.asset('assets/logo_horizon.png'
                             ,width:150 , height: 60,
                           ),
-                      // Cart icon with live badge
-                      _CartBadgeButton(
-                        onTap: () => Navigator.push(
-                          context,
-                          userPageRoute((_) => const UserCartPage()),
-                        ),
+                      Row(
+                        children: [
+                          _NotificationBadgeButton(
+                            onTap: () => Navigator.push(
+                              context,
+                              userPageRoute((_) => const NotificationsListPage()),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          _CartBadgeButton(
+                            onTap: () => Navigator.push(
+                              context,
+                              userPageRoute((_) => const UserCartPage()),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -991,6 +1002,77 @@ class _CartBadgeButton extends StatelessWidget {
                     child: Text(
                       count > 9 ? '9+' : '$count',
                       style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Notification badge icon button ─────────────────────────────────────────────
+class _NotificationBadgeButton extends StatelessWidget {
+  const _NotificationBadgeButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: context.uiSurface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(Icons.notifications_none_rounded,
+                color: context.uiTextPrimary, size: 22),
+          ),
+          if (uid != null)
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .collection('notifications')
+                  .where('isRead', isEqualTo: false)
+                  .snapshots(),
+              builder: (_, snap) {
+                final count = snap.data?.docs.length ?? 0;
+                if (count == 0) return const SizedBox.shrink();
+                return Positioned(
+                  top: -4,
+                  right: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints:
+                        const BoxConstraints(minWidth: 18, minHeight: 18),
+                    child: Text(
+                      count > 9 ? '9+' : '$count',
+                      style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.w800),

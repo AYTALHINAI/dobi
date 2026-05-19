@@ -8,6 +8,7 @@ import '../../database.dart';
 import '../../theme/user_theme.dart';
 import 'about_app_page.dart';
 import 'user_personal_info_page.dart';
+import 'notification_settings_page.dart';
 
 class UserAccountPage extends StatefulWidget {
   const UserAccountPage({super.key});
@@ -331,6 +332,15 @@ class _UserAccountPageState extends State<UserAccountPage> {
                 onTap: () => Navigator.push(
                   context,
                   userPageRoute((_) => const UserPersonalInfoPage()),
+                ),
+              ),
+              _MenuItem(
+                icon: Icons.notifications_none_rounded,
+                label: 'Notification Settings',
+                isDark: isDark,
+                onTap: () => Navigator.push(
+                  context,
+                  userPageRoute((_) => const NotificationSettingsPage()),
                 ),
               ),
               _MenuItem(

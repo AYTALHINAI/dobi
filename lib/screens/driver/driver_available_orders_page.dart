@@ -522,6 +522,7 @@ class _PickupButtonState extends State<_PickupButton> {
         'driverName':     driverName,
         'pickedUpAt': Timestamp.now(),
       });
+      await DatabaseService().notifyOrderStatus(widget.orderId, 'driver_assigned');
       if (mounted) {
         _showSuccessSheet(context);
       }
@@ -709,6 +710,7 @@ class _DeliveryButtonState extends State<_DeliveryButton> {
         'driverName':         driverName,
         'deliveryStartedAt':  Timestamp.now(),
       });
+      await DatabaseService().notifyOrderStatus(widget.orderId, 'driver_heading_to_shop_delivery');
       if (mounted) {
         _showSuccessSheet(context);
       }

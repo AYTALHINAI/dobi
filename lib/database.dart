@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 import '../screens/auth/user/user_registration_model.dart';
 import '../screens/auth/driver/driver_registration_model.dart';
@@ -228,6 +230,28 @@ class DatabaseService {
     } catch (e) {
       throw e.toString();
     }
+  }
+
+  Future<String> getUserRole(String uid) async {
+    try {
+      DocumentSnapshot userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        bool isAdmin = userDoc.get('isAdmin') ?? false;
+        String role = userDoc.get('role') ?? "user";
+        return isAdmin ? "admin" : role;
+      }
+
+      DocumentSnapshot driverDoc = await _firestore.collection('drivers').doc(uid).get();
+      if (driverDoc.exists) {
+        return "driver";
+      }
+
+      DocumentSnapshot shopOwnerDoc = await _firestore.collection('shopOwners').doc(uid).get();
+      if (shopOwnerDoc.exists) {
+        return "shopOwner";
+      }
+    } catch (_) {}
+    return "unknown";
   }
 
   /// ------------------------------------------------
@@ -755,6 +779,174 @@ class DatabaseService {
 
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     await _firestore.collection('orders').doc(orderId).update({'status': newStatus});
+    await notifyOrderStatus(orderId, newStatus);
+  }
+
+  Future<void> notifyOrderStatus(String orderId, String newStatus) async {
+    try {
+      // 1. Fetch order document
+      final orderDoc = await _firestore.collection('orders').doc(orderId).get();
+      if (!orderDoc.exists) return;
+      final orderData = orderDoc.data() as Map<String, dynamic>;
+      final userId = orderData['userId'] as String?;
+      if (userId == null || userId.isEmpty) return;
+      final orderRef = orderData['orderRef'] as String? ?? '—';
+      final shopName = orderData['shopName'] as String? ?? 'Laundry Shop';
+
+      // 2. Fetch customer settings
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) return;
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final recipientEmail = userData['email'] as String?;
+      final emailEnabled = userData['emailNotificationsEnabled'] as bool? ?? true;
+      final inAppEnabled = userData['inAppNotificationsEnabled'] as bool? ?? true;
+
+      // Map newStatus to user-friendly titles and messages
+      String title = '';
+      String body = '';
+
+      switch (newStatus) {
+        case 'order_placed':
+          title = 'Order Placed Successfully';
+          body = 'Your order $orderRef has been placed successfully at $shopName.';
+          break;
+        case 'driver_assigned':
+          title = 'Driver Assigned';
+          body = 'A driver has been assigned to collect your laundry for order $orderRef.';
+          break;
+        case 'heading_to_shop':
+          title = 'Laundry Collected';
+          body = 'The driver has collected your laundry and is heading to $shopName.';
+          break;
+        case 'at_shop_processing':
+          title = 'Cleaning Started';
+          body = 'Your laundry is now being cleaned at $shopName.';
+          break;
+        case 'ready_for_pickup':
+          title = 'Laundry Ready';
+          body = 'Your laundry is clean and ready for pickup at $shopName.';
+          break;
+        case 'driver_heading_to_shop_delivery':
+          title = 'Delivery Driver Assigned';
+          body = 'A driver is heading to $shopName to collect your clean laundry.';
+          break;
+        case 'heading_to_customer':
+          title = 'Out for Delivery';
+          body = 'The driver is on the way to deliver your clean laundry!';
+          break;
+        case 'completed':
+          title = 'Laundry Delivered';
+          body = 'Your laundry has been delivered. Thank you for choosing Dobbie!';
+          break;
+        default:
+          title = 'Order Status Updated';
+          body = 'Your order $orderRef status is now: $newStatus.';
+      }
+
+      // 3. Store In-App Notification if enabled
+      if (inAppEnabled) {
+        await _firestore.collection('users').doc(userId).collection('notifications').add({
+          'title': title,
+          'body': body,
+          'status': newStatus,
+          'orderId': orderId,
+          'orderRef': orderRef,
+          'createdAt': FieldValue.serverTimestamp(),
+          'isRead': false,
+        });
+      }
+
+      // 4. Send Email Notification if enabled and email is present
+      if (emailEnabled && recipientEmail != null && recipientEmail.isNotEmpty) {
+        await _sendNotificationEmail(recipientEmail, title, body, orderRef, newStatus);
+      }
+    } catch (e) {
+      print('Error in notifyOrderStatus: $e');
+    }
+  }
+
+  Future<void> _sendNotificationEmail(
+    String recipientEmail,
+    String title,
+    String body,
+    String orderRef,
+    String status,
+  ) async {
+    // Reusing the Gmail SMTP credentials from OtpService
+    const String senderEmail = 'dobi.app.otp@gmail.com';
+    const String appPassword = 'ujvo qkbl nmgm mgyf';
+
+    final smtpServer = gmail(senderEmail, appPassword);
+
+    final message = Message()
+      ..from = const Address(senderEmail, 'Dobbie App')
+      ..recipients.add(recipientEmail)
+      ..subject = 'Dobbie Notification: $title'
+      ..html = '''
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <h2 style="color: #5C6BC0; margin: 0; font-size: 24px; font-weight: 700;">Dobbie Updates</h2>
+            <p style="color: #666; margin: 4px 0 0 0; font-size: 14px;">Real-time laundry tracking</p>
+          </div>
+          
+          <div style="background-color: #F5F6FA; border-left: 4px solid #5C6BC0; padding: 16px; border-radius: 4px; margin-bottom: 24px;">
+            <h3 style="color: #333333; margin: 0 0 8px 0; font-size: 16px;">$title</h3>
+            <p style="color: #555555; margin: 0; font-size: 14px; line-height: 1.5;">$body</p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+            <tr>
+              <td style="padding: 8px 0; color: #777777; font-size: 13px; width: 120px;">Order Ref:</td>
+              <td style="padding: 8px 0; color: #333333; font-size: 14px; font-weight: bold;">$orderRef</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #777777; font-size: 13px;">Status:</td>
+              <td style="padding: 8px 0; color: #333333; font-size: 14px;">
+                <span style="background-color: #E8EAF6; color: #3F51B5; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">$status</span>
+              </td>
+            </tr>
+          </table>
+
+          <div style="text-align: center; border-top: 1px solid #eeeeee; padding-top: 20px;">
+            <p style="color: #999999; font-size: 11px; margin: 0;">
+              You received this because you enabled notifications in your account settings.
+            </p>
+            <p style="color: #999999; font-size: 11px; margin: 4px 0 0 0;">
+              &copy; 2026 Dobbie App. All rights reserved.
+            </p>
+          </div>
+        </div>
+      ''';
+
+    try {
+      await send(message, smtpServer);
+    } catch (e) {
+      print('SMTP Email Sending failed: $e');
+    }
+  }
+
+  Stream<QuerySnapshot> getUserNotificationsStream(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<void> markNotificationsAsRead(String userId) async {
+    final snap = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .where('isRead', isEqualTo: false)
+        .get();
+
+    final batch = _firestore.batch();
+    for (var doc in snap.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
   }
 
   /// Active orders for a driver: picked (heading to shop) or out_for_delivery (heading to customer).
